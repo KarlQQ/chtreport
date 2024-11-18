@@ -1,0 +1,116 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '2.6.7'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+
+}
+
+group = 'com.ccbs'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    springBootVersion = '2.6.7'
+    springdocVersion = '1.6.6'
+    mybatiesDynamicSqlVersion = '1.4.0' // 或您所使用的具體版本號
+    lombokVersion = '1.18.24'
+    mapstructVersion = '1.4.2.Final'
+    jacksonVersion = '2.13.1'
+    poiVersion = '5.2.2'
+    oracleVersion = '21.3.0.0'
+    aspectjVersion = '1.9.8'
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter:2.6.7'
+
+    // Spring Boot Starter Web
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Spring Boot Starter JDBC
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+
+    // Spring Boot Starter Data JPA
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+//    // Spring Security
+//    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // OpenAPI (SpringDoc)
+    implementation "org.springdoc:springdoc-openapi-ui:${springdocVersion}"
+
+    // MyBatis
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.0'
+
+    // mybatis-dynamic-sql
+    implementation "org.mybatis.dynamic-sql:mybatis-dynamic-sql:${mybatiesDynamicSqlVersion}"
+
+    // Logging (Slf4j and Logback)
+    implementation 'org.springframework.boot:spring-boot-starter-logging'
+
+    // Lombok
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    // Oracle JDBC
+    implementation "com.oracle.database.jdbc:ojdbc8:${oracleVersion}"
+    implementation files('libs/orai18n.jar')
+
+    // AspectJ
+    implementation "org.aspectj:aspectjweaver:${aspectjVersion}"
+
+    // Unit Testing with JUnit
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mockito:mockito-core:4.8.0'
+    testImplementation 'net.bytebuddy:byte-buddy:1.12.0' // 確保版本是最新的
+    testImplementation 'net.bytebuddy:byte-buddy-agent:1.12.0' // 確保版本是最新的
+
+    // Mock Data Tool (Java Faker)
+    implementation 'com.github.javafaker:javafaker:1.0.2'
+
+    // Apache PDFBox
+    implementation 'org.apache.pdfbox:pdfbox:2.0.22'
+
+    // iTextPDF
+    implementation 'com.itextpdf:itextpdf:5.5.13.3'
+    implementation 'com.itextpdf:itext-asian:5.2.0'
+
+    // HttpClient
+    implementation 'commons-httpclient:commons-httpclient:3.1'
+
+    // BouncyCastle for Encryption
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.74'
+
+    // Zip4j for Zip File Operations
+    implementation 'net.lingala.zip4j:zip4j:2.11.5'
+
+    implementation 'commons-fileupload:commons-fileupload:1.4'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.6.7'
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+bootJar {
+    archiveFileName = 'rpt-api.jar'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

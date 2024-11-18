@@ -1,0 +1,32 @@
+<configuration>
+    <springProperty name="LOG_PATH" source="logging.file.path" defaultValue="./logs"/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%-5p] %d{yyyy-MM-dd HH:mm:ss} | %thread | %replace(%replace(%class{0}.%M:%L：){'Logger.debug:49：',''}){'BaseJdbcLogger.debug:137：',''}%m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/rptapi.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/rptapi_%d{yyyyMMdd}_%i.log</fileNamePattern>
+            <maxFileSize>25MB</maxFileSize>
+            <maxHistory>365</maxHistory>
+            <totalSizeCap>1000GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>[%-5p] %d{yyyy-MM-dd HH:mm:ss} | %thread | %class{0}.%M:%L：%m%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- spring logger level -->
+    <logger name="org.springframework" level="INFO" />
+    <logger name="org.thymeleaf" level="INFO" />
+    <logger name="io.swagger.v3.core.converter" level="INFO" />
+
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>
