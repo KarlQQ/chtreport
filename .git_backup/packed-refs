@@ -1,5 +1,0 @@
-# pack-refs with: peeled fully-peeled sorted 
-2fb6059ed574b65068a8d3a485124224bb6e28c8 refs/heads/dev
-ba07b17ef8b4ae8720d613b1e169e391448f1375 refs/heads/jpa_base
-2fb6059ed574b65068a8d3a485124224bb6e28c8 refs/remotes/origin/dev
-ba07b17ef8b4ae8720d613b1e169e391448f1375 refs/remotes/origin/jpa_base
