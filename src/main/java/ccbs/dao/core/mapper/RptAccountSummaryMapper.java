@@ -109,11 +109,10 @@ public interface RptAccountSummaryMapper {
       sql.append(
           "AND (b.acc_item IN ('2825-2402', '2825-2403', '2825-2404', '2825-2405', '2825-2406', '1816-2401', '1816-2402A', '2253-02EA', '2253-02EC') or b.rcv_item IN ('1178-29')) ");
       sql.append("AND b.bu_group_mark IN ('A', 'B', 'C') ");
-      sql.append("AND b.bill_month = #{currentDate} ");
       sql.append(
-          " AND TO_NUMBER(SUBSTR(b.bill_month, 1, 4)) = TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'YYYY')) - 1911 \n");
+          " AND TO_NUMBER(SUBSTR(b.bill_month, 1, 3)) = TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'YYYY')) - 1911 \n");
       sql.append(
-          " AND TO_NUMBER(SUBSTR(b.bill_month, 5, 2)) = TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'MM')) ");
+          " AND TO_NUMBER(SUBSTR(b.bill_month, 4, 2)) = TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'MM')) ");
       sql.append("GROUP BY ");
       sql.append("a.bu_group_mark, b.bill_off_belong ");
       sql.append("ORDER BY ");
@@ -135,7 +134,7 @@ public interface RptAccountSummaryMapper {
             .append(year).append("NonBadDebt \n");
         sql.append("    FROM RPT_ACCOUNT ra \n");
         sql.append(
-            "    WHERE TO_NUMBER(SUBSTR(ra.bill_month, 1, 4)) = TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -")
+            "    WHERE TO_NUMBER(SUBSTR(ra.bill_month, 1, 3)) = TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -")
             .append(year * 12).append("), 'YYYY')) - 1911 \n");
         sql.append("    GROUP BY "+groupBy+" \n");
         sql.append("), \n");
@@ -162,10 +161,10 @@ public interface RptAccountSummaryMapper {
         conditionStr = ">=";
       }
       sql.append(
-          "    WHERE TO_NUMBER(SUBSTR(ra.bill_month, 1, 4)) "+conditionStr+" TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), ")
+          "    WHERE TO_NUMBER(SUBSTR(ra.bill_month, 1, 3)) "+conditionStr+" TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), ")
           .append(dateOffset).append("), 'YYYY')) - 1911 \n");
       sql.append(
-          "          AND TO_NUMBER(SUBSTR(ra.bill_month, 5, 2)) "+conditionStr+" TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), ")
+          "          AND TO_NUMBER(SUBSTR(ra.bill_month, 4, 2)) "+conditionStr+" TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), ")
           .append(dateOffset).append("), 'MM')) \n");
       sql.append("    GROUP BY "+groupBy+" \n");
       sql.append("), \n");
