@@ -76,7 +76,7 @@ ccbs:
           1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款]
    
     bp01f0015:
-      rpt-code: BPGSM010
+      rpt-code: BP2230D6
       filename: BP2230D6_T%s.CSV
       years:
         start: 0
