@@ -62,10 +62,16 @@ public class Bp01ServiceImpl implements Bp01Service {
   @RptLogExecution(rptCode = "BPGSM010")
   public Result process0007(
       String jobId, String opcDate, String opcYearMonth, String isRerun, String inputType) {
-    List<Path> paths;
+    List<Path> paths = new ArrayList<>();
     try {
-      paths = FileUtils.moveFilesMatchingPattern(
-          config0007.getFileSource(), null, config0007.getFilePattern());
+      if ("1".equals(inputType)) {
+        paths = FileUtils.moveFilesMatchingPattern(
+          config0007.getFileSource(), null, config0007.getFilePattern1());
+      }
+      if ("2".equals(inputType)) {
+        paths = FileUtils.moveFilesMatchingPattern(
+          config0007.getFileSource(), null, config0007.getFilePattern2());
+      }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

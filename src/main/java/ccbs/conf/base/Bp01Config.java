@@ -41,7 +41,8 @@ public class Bp01Config {
     private String rptCode;
     private String filename;
     private String fileSource;
-    private String filePattern;
+    private String filePattern1;
+    private String filePattern2;
   }
 
   @Data

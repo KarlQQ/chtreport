@@ -410,7 +410,7 @@ public class RptLogServiceImpl implements RptLogService {
     public  List<RptCategoryOut> getFunCodeOptions() {
         //query RPT_LIST
         SelectStatementProvider rptListProvider =
-                select(rptList.allColumns())
+                selectDistinct(rptList.funCode)
                         .from(rptList)
                         .build().render(RenderingStrategies.MYBATIS3);
         List<RptList> rptListOut = rptListMapper.selectMany(rptListProvider);
@@ -419,13 +419,13 @@ public class RptLogServiceImpl implements RptLogService {
 
         RptCategoryOut rptCategoryOutForAll = new RptCategoryOut();
         rptCategoryOutForAll.setName("---全部---");
-        rptCategoryOutForAll.setId("0");
+        //rptCategoryOutForAll.setId("0");
         rptCategoryOutForAll.setCode("0");
         rptCategoryOuts.add(rptCategoryOutForAll);
 
         for(int i =0 ;i<rptListOut.size();i++){
             RptCategoryOut rptCategoryOut = new RptCategoryOut();
-            rptCategoryOut.setId(rptListOut.get(i).getRptListId().toString());
+            //rptCategoryOut.setId(rptListOut.get(i).getRptListId().toString());
             rptCategoryOut.setCode(rptListOut.get(i).getFunCode());
             rptCategoryOut.setName(NameMapping.getRptFunctionName(rptListOut.get(i).getFunCode()));
             rptCategoryOuts.add(rptCategoryOut);
