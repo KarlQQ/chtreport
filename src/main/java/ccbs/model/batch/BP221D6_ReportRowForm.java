@@ -38,58 +38,64 @@ public class BP221D6_ReportRowForm {
     private String offName;
 
     @Schema(description = "非呆帳-統計至執行日的前2個月(含該月)", example = "0")
-    private BigDecimal aNonBadDebt;
+    private BigDecimal aNonBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "呆帳-統計至執行日的前2個月(含該月)", example = "0")
-    private BigDecimal aBadDebt;
+    private BigDecimal aBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "小記-統計至執行日的前2個月(含該月)", example = "0")
-    private BigDecimal aSubtotal;
+    private BigDecimal aSubtotal = BigDecimal.ZERO;
 
     @Schema(description = "非呆帳-統計至執行日的前1個月(含該月)", example = "0")
-    private BigDecimal bNonBadDebt;
+    private BigDecimal bNonBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "呆帳-統計至執行日的前1個月(含該月)", example = "0")
-    private BigDecimal bBadDebt;
+    private BigDecimal bBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "小記-統計至執行日的前1個月(含該月)", example = "0")
-    private BigDecimal bSubtotal;
+    private BigDecimal bSubtotal = BigDecimal.ZERO;
 
     @Schema(description = "非呆帳-單獨統計執行日的前1年該年度", example = "0")
-    private BigDecimal cNonBadDebt;
+    private BigDecimal cNonBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "呆帳-單獨統計執行日的前1年該年度", example = "0")
-    private BigDecimal cBadDebt;
+    private BigDecimal cBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "小記-單獨統計執行日的前1年該年度", example = "0")
-    private BigDecimal cSubtotal;
+    private BigDecimal cSubtotal = BigDecimal.ZERO;
 
     @Schema(description = "非呆帳-統計至執行日的前2年(含該年度)", example = "0")
-    private BigDecimal dNonBadDebt;
+    private BigDecimal dNonBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "呆帳-統計至執行日的前2年(含該年度)", example = "0")
-    private BigDecimal dBadDebt;
+    private BigDecimal dBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "小記-統計至執行日的前2年(含該年度)", example = "0")
-    private BigDecimal dSubtotal;
+    private BigDecimal dSubtotal = BigDecimal.ZERO;
 
     @Schema(description = "非呆帳-單獨統計執行日的前1年度的十一月", example = "0")
-    private BigDecimal eNonBadDebt;
+    private BigDecimal eNonBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "呆帳-單獨統計執行日的前1年度的十一月", example = "0")
-    private BigDecimal eBadDebt;
+    private BigDecimal eBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "小記-單獨統計執行日的前1年度的十一月", example = "0")
-    private BigDecimal eSubtotal;
+    private BigDecimal eSubtotal = BigDecimal.ZERO;
 
     @Schema(description = "非呆帳-單獨統計執行日的前1年度的十二月", example = "0")
-    private BigDecimal fNonBadDebt;
+    private BigDecimal fNonBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "呆帳-單獨統計執行日的前1年度的十二月", example = "0")
-    private BigDecimal fBadDebt;
+    private BigDecimal fBadDebt = BigDecimal.ZERO;
 
     @Schema(description = "小記-單獨統計執行日的前1年度的十二月", example = "0")
-    private BigDecimal fSubtotal;
+    private BigDecimal fSubtotal = BigDecimal.ZERO;
+
+    private BigDecimal totalNonBadDebt = BigDecimal.ZERO;
+
+    private BigDecimal totalBadDebt = BigDecimal.ZERO;
+
+    private BigDecimal totalSubtotal = BigDecimal.ZERO;
 
 
     public void setFromOffNames(RptAccountSummary summary) {

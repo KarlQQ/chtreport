@@ -7,6 +7,7 @@ import java.util.List;
 import ccbs.dao.core.entity.RptAccountSummary;
 import ccbs.dao.core.entity.RptBP2230D4Summary;
 import ccbs.dao.core.entity.RptBP2230D5Summary;
+import ccbs.dao.core.entity.RptBP2230D6Summary;
 import ccbs.dao.core.entity.RptBP2240D1Summary;
 import ccbs.dao.core.constants.DateTypeConstants;
 
@@ -25,6 +26,9 @@ public interface RptAccountSummaryMapper {
 
   @SelectProvider(type = SqlProvider.class, method = "selectBP2230D5Summary")
   List<RptBP2230D5Summary> selectBP2230D5Summary(@Param("currentDate") String currentDate);
+
+  @SelectProvider(type = SqlProvider.class, method = "selectBP2230D6Summary")
+  List<RptBP2230D6Summary> selectBP2230D6Summary(@Param("currentDate") String currentDate);
 
   class SqlProvider {
     public String selectRptAccountSummary(@Param("currentDate") String currentDate, @Param("offType") String offType,
@@ -275,6 +279,44 @@ public interface RptAccountSummaryMapper {
 
       sql.append("ORDER BY \n");
       sql.append("    billOffBelong");
+
+      String finalSql = sql.toString();
+      return finalSql;
+    }
+
+    public String selectBP2230D6Summary(@Param("currentDate") String currentDate) {
+      StringBuilder sql = new StringBuilder();
+
+      sql.append("WITH \n");
+      sql.append("monthly AS (\n");
+      sql.append("    SELECT ACC_ITEM,\n");
+      sql.append("           TO_NUMBER(SUBSTR(ra.bill_month, 4, 2)) AS month,\n");
+      sql.append("           COALESCE(SUM(CASE WHEN ra.debt_mark NOT IN ('Q', 'Y') THEN ra.bill_item_amt ELSE 0 END), 0) AS nonBadDebt\n");
+      sql.append("    FROM RPT_ACCOUNT ra\n");
+      sql.append("    WHERE TO_NUMBER(SUBSTR(ra.bill_month, 1, 3)) = TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), 0), 'YYYY')) - 1911\n");
+      sql.append("          AND TO_NUMBER(SUBSTR(ra.bill_month, 4, 2)) BETWEEN 1 AND 12\n");
+      sql.append("    GROUP BY ACC_ITEM, TO_NUMBER(SUBSTR(ra.bill_month, 4, 2))\n");
+      sql.append(")\n");
+      sql.append("SELECT \n");
+      sql.append("    ratd.BILL_ACC_ITEM AS accItem,\n");
+      sql.append("    ratd.BILL_OVD_ITEM AS ovdItem,\n");
+      sql.append("    ratd.BILL_ACC_NAME AS accName,\n");
+      for (int month = 1; month <= 12; month++) {
+        sql.append("    COALESCE(MAX(CASE WHEN month = ").append(month).append(" THEN nonBadDebt ELSE 0 END), 0) AS nonBadDebt_").append(month).append(",\n");
+      }
+      for (int month = 1; month <= 11; month++) {
+        sql.append("    COALESCE(MAX(CASE WHEN month = ").append(month).append(" THEN nonBadDebt ELSE 0 END), 0) +\n");
+      }
+      sql.append("    COALESCE(MAX(CASE WHEN month = 12 THEN nonBadDebt ELSE 0 END), 0) AS totalNonBadDebt,\n");
+      sql.setLength(sql.length() - 2); // 移除最後一個逗號
+      sql.append("\n");
+      sql.append("FROM \n");
+      sql.append("    monthly m\n");
+      sql.append("JOIN RPT_ACC_TYPE_DETL ratd ON m.ACC_ITEM = ratd.BILL_ACC_ITEM\n");
+      sql.append("GROUP BY \n");
+      sql.append("    ratd.BILL_ACC_ITEM, ratd.BILL_OVD_ITEM, ratd.BILL_ACC_NAME\n");
+      sql.append("ORDER BY \n");
+      sql.append("    accItem");
 
       String finalSql = sql.toString();
       return finalSql;

@@ -95,29 +95,18 @@ public class RptController {
 
   @Operation(summary = "應收會計欠費統計表(非呆帳)", tags = {"Reports"},
       description = "應收會計欠費統計表(非呆帳)")
-  @PostMapping("/downloadReceivableArrears")
+  @PostMapping(value="/downloadReceivableArrears", produces = "application/json;charset=UTF-8")
   public ResponseEntity<?>
-  downloadReceivableArrears(@RequestBody Bp01f0015Input input) {
+  downloadReceivableArrears(@RequestBody BatchSimpleRptInStr input) {
     try {
-      File reportFile = bp01Service
-                            .process0015(input.getJobId(), input.getOpcDate(),
-                                input.getOpcYearMonth(), input.getIsRerun())
-                            .getReportFile();
+      ResponseEntity<String> response = ValidationUtils.validateBatchSimpleRptInStr(input);
+      if (response != null)
+        return response;
 
-      byte[] byteArray = Files.readAllBytes(reportFile.toPath());
-      ByteArrayResource resource = new ByteArrayResource(byteArray);
-      HttpHeaders headers = new HttpHeaders();
-      headers.add(HttpHeaders.CONTENT_DISPOSITION,
-          String.format("attachment; filename=\"%s\"", reportFile.getName()));
-      headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
-
-      return ResponseEntity.ok()
-          .headers(headers)
-          .contentLength(resource.contentLength())
-          .body(resource);
-
+      arrearsService.batchBP2230D6Rpt(input);
+      return ResponseEntity.ok("應收會計欠費統計表(非呆帳)產生成功");
     } catch (Exception e) {
-      log.error("應收會計欠費統計表(非呆帳)作業失敗!, 錯誤訊息: ", e);
+      log.error("應收會計欠費統計表(非呆帳)產生失敗", e);
       return ResponseEntity.internalServerError().body(e.getMessage());
     }
   }

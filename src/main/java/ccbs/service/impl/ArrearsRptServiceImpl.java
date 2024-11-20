@@ -2,6 +2,7 @@ package ccbs.service.impl;
 
 import static org.mybatis.dynamic.sql.SqlBuilder.isEqualTo;
 import static org.mybatis.dynamic.sql.SqlBuilder.select;
+import static org.mybatis.dynamic.sql.SqlBuilder.sum;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -56,6 +57,7 @@ import ccbs.dao.core.entity.BillRels;
 import ccbs.dao.core.entity.RptAccountSummary;
 import ccbs.dao.core.entity.RptBP2230D4Summary;
 import ccbs.dao.core.entity.RptBP2230D5Summary;
+import ccbs.dao.core.entity.RptBP2230D6Summary;
 import ccbs.dao.core.entity.RptBP2240D1Summary;
 import ccbs.dao.core.entity.RptBillMain;
 import ccbs.dao.core.mapper.BillRelsMapper;
@@ -1446,12 +1448,20 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       BigDecimal totalFBadDebt = BigDecimal.ZERO;
       BigDecimal totalFSubtotal = BigDecimal.ZERO;
 
+
+      
+
+
       for (BP221D6_ReportRowForm row : rows) {
+        BigDecimal totalAllNonBadDebt = BigDecimal.ZERO;
+        BigDecimal totalAllBadDebt = BigDecimal.ZERO;
         if (row.getANonBadDebt() != null) {
           totalANonBadDebt = totalANonBadDebt.add(row.getANonBadDebt());
+          totalAllNonBadDebt = totalAllNonBadDebt.add(row.getANonBadDebt());
         }
         if (row.getABadDebt() != null) {
           totalABadDebt = totalABadDebt.add(row.getABadDebt());
+          totalAllBadDebt = totalAllBadDebt.add(row.getABadDebt());
         }
         if (row.getASubtotal() != null) {
           totalASubtotal = totalASubtotal.add(row.getASubtotal());
@@ -1459,50 +1469,64 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         if (!"D".equals(offType)) {
           if (row.getBNonBadDebt() != null) {
             totalBNonBadDebt = totalBNonBadDebt.add(row.getBNonBadDebt());
+            totalAllNonBadDebt = totalAllNonBadDebt.add(row.getBNonBadDebt());
           }
           if (row.getBBadDebt() != null) {
             totalBBadDebt = totalBBadDebt.add(row.getBBadDebt());
+            totalAllBadDebt = totalAllBadDebt.add(row.getBBadDebt());
           }
           if (row.getBSubtotal() != null) {
             totalBSubtotal = totalBSubtotal.add(row.getBSubtotal());
           }
           if (row.getCNonBadDebt() != null) {
             totalCNonBadDebt = totalCNonBadDebt.add(row.getCNonBadDebt());
+            totalAllNonBadDebt = totalAllNonBadDebt.add(row.getCNonBadDebt());
           }
           if (row.getCBadDebt() != null) {
             totalCBadDebt = totalCBadDebt.add(row.getCBadDebt());
+            totalAllBadDebt = totalAllBadDebt.add(row.getCBadDebt());
           }
           if (row.getCSubtotal() != null) {
             totalCSubtotal = totalCSubtotal.add(row.getCSubtotal());
           }
           if (row.getDNonBadDebt() != null) {
             totalDNonBadDebt = totalDNonBadDebt.add(row.getDNonBadDebt());
+            totalAllNonBadDebt = totalAllNonBadDebt.add(row.getDNonBadDebt());
           }
           if (row.getDBadDebt() != null) {
             totalDBadDebt = totalDBadDebt.add(row.getDBadDebt());
+            totalAllBadDebt = totalAllBadDebt.add(row.getDBadDebt());
           }
           if (row.getDSubtotal() != null) {
             totalDSubtotal = totalDSubtotal.add(row.getDSubtotal());
           }
           if (row.getENonBadDebt() != null) {
             totalENonBadDebt = totalENonBadDebt.add(row.getENonBadDebt());
+            totalAllNonBadDebt = totalAllNonBadDebt.add(row.getENonBadDebt());
           }
           if (row.getEBadDebt() != null) {
             totalEBadDebt = totalEBadDebt.add(row.getEBadDebt());
+            totalAllBadDebt = totalAllBadDebt.add(row.getEBadDebt());
           }
           if (row.getESubtotal() != null) {
             totalESubtotal = totalESubtotal.add(row.getESubtotal());
           }
           if (row.getFNonBadDebt() != null) {
             totalFNonBadDebt = totalFNonBadDebt.add(row.getFNonBadDebt());
+            totalAllNonBadDebt = totalAllNonBadDebt.add(row.getFNonBadDebt());
           }
           if (row.getFBadDebt() != null) {
             totalFBadDebt = totalFBadDebt.add(row.getFBadDebt());
+            totalAllBadDebt = totalAllBadDebt.add(row.getFBadDebt());
           }
           if (row.getFSubtotal() != null) {
             totalFSubtotal = totalFSubtotal.add(row.getFSubtotal());
           }
         }
+
+        row.setTotalNonBadDebt(totalAllNonBadDebt);
+        row.setTotalBadDebt(totalAllBadDebt);
+        row.setTotalSubtotal(totalAllNonBadDebt.add(totalAllBadDebt));
       }
 
       sumRow.setOffName("總計");
@@ -1526,6 +1550,21 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         sumRow.setFBadDebt(totalFBadDebt);
         sumRow.setFSubtotal(totalFSubtotal);
       }
+
+      sumRow.setTotalNonBadDebt(
+          sumRow.getANonBadDebt().add(sumRow.getBNonBadDebt())
+              .add(sumRow.getCNonBadDebt()).add(sumRow.getDNonBadDebt())
+              .add(sumRow.getENonBadDebt()).add(sumRow.getFNonBadDebt())
+      );
+      sumRow.setTotalBadDebt(
+          sumRow.getABadDebt().add(sumRow.getBBadDebt())
+              .add(sumRow.getCBadDebt()).add(sumRow.getDBadDebt())
+              .add(sumRow.getEBadDebt()).add(sumRow.getFBadDebt())
+      );
+      sumRow.setTotalSubtotal(
+          sumRow.getTotalNonBadDebt().add(sumRow.getTotalBadDebt())
+      );
+
 
       rows.add(sumRow);
 
@@ -1591,18 +1630,18 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         String strLine = "------------------------------";
         // Write header
         if (!"D".equals(offType)) {
-          String header1 = ",《" + titleName + "》,,,處理日期 " + rocDate + ",,,,,,,,,,,,,\n";
+          String header1 = ",《" + titleName + "》,,,處理日期 " + rocDate + ",,,,,,,,,,,,,,,,\n";
           writer.write(header1);
           String header2 = "," + twoMonthsAgoYear + "年度" + twoMonthsAgoMonth + "月（含以前）,,,"
               + oneMonthAgoYear + "年度" + oneMonthAgoMonth + "月（含以前）,,," + oneYearAgoYear
               + "年度,,," + twoYearsAgoYear + "年度（含以前）,,," + lastYearNovemberYear + "年度"
               + lastYearNovemberMonth + "月,,," + lastYearDecemberYear + "年度"
-              + lastYearDecemberMonth + "月,\n";
+              + lastYearDecemberMonth + "月,,," + "合計" + ",\n";
           writer.write(header2);
           StringBuilder header3Builder = new StringBuilder(",");
-          for (int i = 0; i < 18; i++) {
+          for (int i = 0; i < 21; i++) {
             header3Builder.append(strLine);
-            if (i < 17) {
+            if (i < 20) {
               header3Builder.append(",");
             }
           }
@@ -1610,9 +1649,9 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           writer.write(header3Builder.toString());
           // 使用 for 迴圈生成 header4
           StringBuilder header4Builder = new StringBuilder(",");
-          for (int i = 0; i < 6; i++) {
+          for (int i = 0; i < 7; i++) {
             header4Builder.append("非呆帳,呆帳,小計");
-            if (i < 5) {
+            if (i < 6) {
               header4Builder.append(",");
             }
           }
@@ -1635,9 +1674,9 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           if (row.equals(rows.get(rows.size() - 1))) {
             if (!"D".equals(offType)) {
               StringBuilder header5Builder = new StringBuilder();
-              for (int i = 0; i < 24; i++) {
+              for (int i = 0; i < 22; i++) {
                 header5Builder.append(strLine);
-                if (i < 23) {
+                if (i < 21) {
                   header5Builder.append(",");
                 }
               }
@@ -1728,6 +1767,19 @@ public class ArrearsRptServiceImpl implements ArrearsService {
                 + "\""
                 + (row.getFSubtotal() != null ? String.format("%,d", row.getFSubtotal().longValue())
                                               : "0")
+                + "\","
+                + "\""
+                + (row.getTotalNonBadDebt() != null
+                        ? String.format("%,d", row.getTotalNonBadDebt().longValue())
+                        : "0")
+                + "\","
+                + "\""
+                + (row.getTotalBadDebt() != null ? String.format("%,d", row.getTotalBadDebt().longValue())
+                                             : "0")
+                + "\","
+                + "\""
+                + (row.getTotalSubtotal() != null ? String.format("%,d", row.getTotalSubtotal().longValue())
+                                              : "0")
                 + "\"\n";
           } else {
             rowData = "\"" + row.getOffName() + "\","
@@ -1810,7 +1862,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           .put(billOffBelong, summary);
     }
 
-    String csvFileName = "BP2240D1_T" + rocYYYMM + ".csv";
+    String csvFileName = "BP2240D1_T" + rocDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
     // 建立 CsvGenerator 物件
     CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 11, ",");
@@ -2239,5 +2291,139 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     csvGenerator.save();
 
     return csvFileName;
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BP2230D6")
+  public Result batchBP2230D6Rpt(BatchSimpleRptInStr input) throws Exception {
+    String rptCode = "BP2230D6";
+    String jobId = input.getJobId();
+    String opcDate = input.getOpcDate();
+    String rocDate = DateUtils.convertToRocDate(opcDate);
+    String opcYYYMM = input.getOpcYearMonth();
+    String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
+    String isRerun = input.getIsRerun();
+    List<dData> dDataList = new ArrayList<>();
+
+    String csvFileName = "BP2230D6_T" + rocDate + ".csv";
+    String csvFileAbsolutePath = csvFilePath + csvFileName;
+    // 建立 CsvGenerator 物件
+    CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 17, ",");
+
+    String rocYYY = rocYYYMM.substring(0, 3);
+    String rocMM = rocYYYMM.substring(3, 5);
+    List<String> header01 = new ArrayList<>();
+    String headerString = String.format(
+        "%s 年 %s 月  北分欠費依會計科目【非呆帳】統計表       製表日期 %s", rocYYY, rocMM, rocDate);
+    header01.add(headerString);
+    csvGenerator.writeData(0, header01);
+
+
+    // 增加年份循環
+    int currentYear = Integer.parseInt(opcYYYMM.substring(0, 4));
+    String currentMonthStr = opcYYYMM.substring(4, 6);
+    for (int yearOffset = 0; yearOffset <= 5; yearOffset++) {
+      int year = currentYear - yearOffset;
+      String searchYearMonth = String.valueOf(year) + currentMonthStr;
+    
+      List<RptBP2230D6Summary> rptBP2230D6Summaries =
+          rptAccountSummaryMapper.selectBP2230D6Summary(searchYearMonth);
+
+      List<String> header02 = new ArrayList<>();
+      csvGenerator.writeData(0, header02);
+      List<String> header03 = new ArrayList<>();
+      header03.add(String.format("%d 年度", year-1911));
+      header03.add("");
+      header03.add("");
+      header03.add("");
+      for (int month = 1; month <= 12; month++) {
+        header03.add(String.format("%02d 月", month));
+      }
+      header03.add("總 計");
+      csvGenerator.writeData(0, header03);
+      List<String> header04 = new ArrayList<>();
+      header04.add("應收帳款");
+      header04.add("加");
+      header04.add("催收款項");
+      header04.add("");
+      for (int i = 1; i <= 12; i++) {
+        header04.add("合計欠費╱非呆帳");
+      }
+      header04.add("總計欠費╱非呆帳");
+      csvGenerator.writeData(0, header04);
+
+      BigDecimal[] totals = new BigDecimal[13];
+      for (int i = 0; i < totals.length; i++) {
+        totals[i] = BigDecimal.ZERO;
+      }
+
+      for (RptBP2230D6Summary summary : rptBP2230D6Summaries) {
+        List<String> dataRow = new ArrayList<>();
+        dataRow.add(summary.getAccItem());
+        if (summary.getOvdItem() != null && !summary.getOvdItem().trim().isEmpty()) {
+          dataRow.add("+");
+          dataRow.add(summary.getOvdItem());
+        } else {
+          dataRow.add("");
+          dataRow.add("");
+        }
+        dataRow.add(summary.getAccName());
+
+        for (int month = 1; month <= 12; month++) {
+          BigDecimal yearNonBadDebt = (BigDecimal) summary.getClass()
+                                          .getMethod("getNonBadDebt_" + month)
+                                          .invoke(summary);
+
+          if (yearNonBadDebt == null) {
+            yearNonBadDebt = BigDecimal.ZERO;
+          }
+
+          dataRow.add(StringUtils.formatNumberWithCommas(yearNonBadDebt));
+          totals[month - 1] = totals[month - 1].add(yearNonBadDebt);
+        }
+
+        BigDecimal totalNonBadDebt =
+            summary.getTotalNonBadDebt() != null ? summary.getTotalNonBadDebt() : BigDecimal.ZERO;
+        dataRow.add(StringUtils.formatNumberWithCommas(totalNonBadDebt));
+        totals[12] = totals[12].add(totalNonBadDebt);
+
+        csvGenerator.writeData(0, dataRow);
+      }
+
+      List<String> formattedTotals = new ArrayList<>();
+      for (BigDecimal total : totals) {
+        formattedTotals.add(StringUtils.formatNumberWithCommas(total));
+      }
+
+      List<String> footer = new ArrayList<>();
+      footer.add("");
+      footer.add("");
+      footer.add("總計");
+      footer.add("");
+      footer.addAll(formattedTotals);
+      csvGenerator.writeData(0, footer);
+      csvGenerator.nextRow();
+
+    }
+
+    // 儲存 CSV 檔案
+    csvGenerator.save();
+
+    dDataList.add(dData.builder()
+            .rptFileName(csvFileName)
+            .billOff("2")
+            .rptTimes("3")
+            .billMonth(rocYYYMM)
+            .rptDate(opcDate)
+            .rptFileCount(1)
+            .rptSecretMark("N")
+            .build());
+
+    return Result.builder()
+    .rptCode(rptCode)
+    .isRerun(isRerun)
+    .opBatchno(jobId)
+    .dDataList(dDataList)
+    .build();
   }
 }

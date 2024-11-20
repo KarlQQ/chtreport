@@ -2,7 +2,7 @@ ccbs:
   bp01:
     bp01f0003:
       rpt-code: BP220RPT
-      filename: BP220RPT_T%s.CSV
+      filename: BP220RPT_T%s.csv
       group-bill-items:
         - name: 全業務逾期１個月欠費
           pattern: .*
@@ -64,13 +64,13 @@ ccbs:
     bp01f0007:
       rpt-code: BPGSM010
       filename: BPGSM010_%s%s%s.TXT
-      file-source: /Users/karlque/Downloads/output/txt
+      file-source: /workspaces/ccbs/chtccbs/out/in/bpgsm010
       file-pattern-1: BPGSM010_MBMS_\d*\.TXT
       file-pattern-2: BPGSM010_CCBS_\d*\.TXT
 
     bp01f0013:
       rpt-code: BP2230D2
-      filename: BP2230D2_%s.CSV
+      filename: BP2230D2_%s.csv
       years:
         start: 1
         titles: [1144應收帳款,1144應收帳款,1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款,
@@ -78,7 +78,7 @@ ccbs:
    
     bp01f0015:
       rpt-code: BP2230D6
-      filename: BP2230D6_T%s.CSV
+      filename: BP2230D6_T%s.csv
       years:
         start: 0
         length: 6
