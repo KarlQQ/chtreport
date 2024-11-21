@@ -13,7 +13,7 @@ public class RptApiInitializer implements WebApplicationInitializer {
     public void onStartup(javax.servlet.ServletContext servletContext) throws ServletException {
 
 		// Profile setting
-	    servletContext.setInitParameter("spring.profiles.active", "tst");
+	    servletContext.setInitParameter("spring.profiles.active", "prd");
 	        
 	    System.out.println("spring.profiles.active is : "+servletContext.getInitParameter("spring.profiles.active"));
 

@@ -38,6 +38,7 @@ import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -479,10 +480,20 @@ public class RptController {
 
   @Operation(summary = "取得機構代號選單", tags = {"Reports"}, description = "取得機構代號選單")
   @PostMapping("/getOffAdminOptions")
-  public List<String> getOffAdminOptions(@RequestBody UserInfoQueryIn input) {
-    List<String> rptOptionList = commOfficeService.getDistinctBillOffId();
-
-    return rptOptionList;
+  public List<RptCategoryOut> getOffAdminOptions(@RequestBody UserInfoQueryIn input) {
+    List<String> billOffIds = commOfficeService.getDistinctBillOffId();
+    return billOffIds.stream()
+        .map(billOffId -> {
+          OfficeInfoQueryOut comm01_0003 = comm01Service.COMM01_0003(
+              OfficeInfoQueryIn.builder().officeCode(billOffId).transType("A").build());
+          return RptCategoryOut.builder()
+              .name(comm01_0003.getResultStatus().equals("0")
+                      ? comm01_0003.getResultOfficeCN().trim()
+                      : billOffId)
+              .code(billOffId)
+              .build();
+        })
+        .collect(Collectors.toList());
   }
 
   @Operation(summary = "取得報表種類選單", tags = {"Reports"}, description = "取得報表種類選單")
@@ -492,7 +503,7 @@ public class RptController {
     return rptOptionList;
   }
 
-  @Operation(summary = "取得報表種類選單", tags = {"Reports"}, description = "取得報表種類選單")
+  @Operation(summary = "取得報表名稱選單", tags = {"Reports"}, description = "取得報表名稱選單")
   @PostMapping("/getFunCodeOptions")
   public List<RptCategoryOut> getFunCodeOptions(@RequestBody UserInfoQueryIn input) {
     List<RptCategoryOut> funCodeOptionList = rptLogService.getFunCodeOptions();

@@ -94,7 +94,7 @@ public class Bp01f0003ServiceImpl implements Bp01f0003Service {
 
     try {
       String filePath =
-          Paths.get(csvFilePath, String.format(config.getFilename(), opcYearMonth)).toString();
+          Paths.get(csvFilePath, String.format(config.getFilename(), opcDate)).toString();
       File reportFile = FileUtils.generateFile(filePath, report);
       return Result.builder()
           .rptCode(config.getRptCode())

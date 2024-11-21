@@ -388,7 +388,7 @@ public class RptLogServiceImpl implements RptLogService {
             RptCategoryOut rptCategoryOut = new RptCategoryOut();
             rptCategoryOut.setId(rptListOut.get(i).getRptListId().toString());
             rptCategoryOut.setCode(rptListOut.get(i).getRptCode());
-            rptCategoryOut.setName(rptListOut.get(i).getRptName());
+            rptCategoryOut.setName(rptListOut.get(i).getRptCode());
 
             rptCategoryOuts.add(rptCategoryOut);
         }

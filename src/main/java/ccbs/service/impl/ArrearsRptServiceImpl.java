@@ -1571,19 +1571,19 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       String titleName;
       if (offType == "A") {
         // BP221D6_T{OPC_YYYMM}.CSV
-        csvFileName = "BP221D6_T" + rocDate + ".csv";
+        csvFileName = "BP221D6_T" + opcDate + ".csv";
         titleName = "營運處年度欠費統計表";
       } else if (offType == "B") {
         // BP221D6_GSM_T{OPC_YYYMM}.CSV
-        csvFileName = "BP221D6_GSM_T" + rocDate + ".csv";
+        csvFileName = "BP221D6_GSM_T" + opcDate + ".csv";
         titleName = "行動業務營運處年度欠費統計表";
       } else if (offType == "C") {
         // BP221D6_ORG_T{OPC_YYYMM}.CSV
-        csvFileName = "BP221D6_ORG_T" + rocDate + ".csv";
+        csvFileName = "BP221D6_ORG_T" + opcDate + ".csv";
         titleName = "排除特定代收業務年度欠費統計表";
       } else if (offType == "D") {
         // BP221D6(X-2)_T{OPC_DATE}.CSV
-        csvFileName = "BP221D6(X-2)_T" + rocDate + ".csv";
+        csvFileName = "BP221D6(X-2)_T" + opcDate + ".csv";
         titleName = "營運處逾期一月欠費統計表";
       } else {
         throw new IllegalArgumentException("Invalid offType: " + offType);
@@ -1862,7 +1862,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           .put(billOffBelong, summary);
     }
 
-    String csvFileName = "BP2240D1_T" + rocDate + ".csv";
+    String csvFileName = "BP2240D1_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
     // 建立 CsvGenerator 物件
     CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 11, ",");
@@ -2029,7 +2029,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     List<RptBP2230D4Summary> rptBP2230D4Summaries =
         rptAccountSummaryMapper.selectBP2230D4Summary(opcYYYMM);
 
-    String csvFileName = "BP2230D4_T" + rocDate + ".csv";
+    String csvFileName = "BP2230D4_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
     // 建立 CsvGenerator 物件
     CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 32, ",");
@@ -2176,7 +2176,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     List<RptBP2230D5Summary> rptBP2230D5Summaries =
         rptAccountSummaryMapper.selectBP2230D5Summary(opcYYYMM);
 
-    String csvFileName = "BP2230D5_T" + rocDate + ".csv";
+    String csvFileName = "BP2230D5_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
     // 建立 CsvGenerator 物件
     CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 29, ",");
@@ -2305,7 +2305,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     String isRerun = input.getIsRerun();
     List<dData> dDataList = new ArrayList<>();
 
-    String csvFileName = "BP2230D6_T" + rocDate + ".csv";
+    String csvFileName = "BP2230D6_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
     // 建立 CsvGenerator 物件
     CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 17, ",");

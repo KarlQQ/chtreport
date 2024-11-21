@@ -70,7 +70,7 @@ ccbs:
 
     bp01f0013:
       rpt-code: BP2230D2
-      filename: BP2230D2_%s.csv
+      filename: BP2230D2_T%s.csv
       years:
         start: 1
         titles: [1144應收帳款,1144應收帳款,1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款,
