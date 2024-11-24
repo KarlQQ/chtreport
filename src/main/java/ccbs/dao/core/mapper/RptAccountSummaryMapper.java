@@ -56,10 +56,12 @@ public interface RptAccountSummaryMapper {
       } else if (dateType != null && !dateType.isEmpty()) {
         if (dateType.equals(DateTypeConstants.ACU_X_2M)) {
           // 統計至執行日的前2個月
-          sql.append("WHERE TO_CHAR(TO_DATE(TO_NUMBER(SUBSTR(a0.bill_month, 1, 3)) + 1911 || SUBSTR(a0.bill_month, 4, 2), 'YYYYMM'), 'YYYYMM') <= TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -2), 'YYYYMM') ");
+          sql.append("WHERE TO_NUMBER(SUBSTR(a0.bill_month, 1, 3)) = TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'YYYY')) - 1911 ");
+          sql.append("AND TO_NUMBER(SUBSTR(a0.bill_month, 4, 2)) <= TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'MM')) - 2");
         } else if (dateType.equals(DateTypeConstants.ACU_X_1M)) {
           // 統計至執行日的前1個月
-          sql.append("WHERE TO_CHAR(TO_DATE(TO_NUMBER(SUBSTR(a0.bill_month, 1, 3)) + 1911 || SUBSTR(a0.bill_month, 4, 2), 'YYYYMM'), 'YYYYMM') <= TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -1), 'YYYYMM') ");
+          sql.append("WHERE TO_NUMBER(SUBSTR(a0.bill_month, 1, 3)) = TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'YYYY')) - 1911 ");
+          sql.append("AND TO_NUMBER(SUBSTR(a0.bill_month, 4, 2)) <= TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'MM')) - 1");
         } else if (dateType.equals(DateTypeConstants.SUM_X_1Y)) {
           // 單獨統計執行日的前1年該年度
           sql.append(
@@ -81,7 +83,7 @@ public interface RptAccountSummaryMapper {
 
       // 如果 offType 是 "C"，則排除特定代收業務
       if (offType != null && !offType.isEmpty() && offType.equals("C")) {
-        sql.append("AND a0.rcv_item not in ('5609-9299A','5609-9299B') ");
+        sql.append("AND a0.acc_item not in ('5609-9299A','5609-9299B') ");
       }
 
       sql.append(") a ");
@@ -98,20 +100,20 @@ public interface RptAccountSummaryMapper {
       sql.append("SELECT ");
       sql.append("a.bu_group_mark AS buGroupMark, ");
       sql.append("b.bill_off_belong AS billOffBelong, ");
-      sql.append("NVL(SUM(CASE WHEN b.acc_item = '2825-2402' THEN b.bill_item_amt ELSE 0 END), 0) AS aCol, ");
-      sql.append("NVL(SUM(CASE WHEN b.acc_item = '2825-2403' THEN b.bill_item_amt ELSE 0 END), 0) AS bCol, ");
-      sql.append("NVL(SUM(CASE WHEN b.acc_item = '2825-2404' THEN b.bill_item_amt ELSE 0 END), 0) AS cCol, ");
-      sql.append("NVL(SUM(CASE WHEN b.acc_item = '2825-2405' THEN b.bill_item_amt ELSE 0 END), 0) AS dCol, ");
-      sql.append("NVL(SUM(CASE WHEN b.acc_item = '2825-2406' THEN b.bill_item_amt ELSE 0 END), 0) AS eCol, ");
-      sql.append("NVL(SUM(CASE WHEN b.acc_item = '1816-2401' THEN b.bill_item_amt ELSE 0 END), 0) AS fCol, ");
-      sql.append("NVL(SUM(CASE WHEN b.acc_item = '1816-2402A' THEN b.bill_item_amt ELSE 0 END), 0) AS gCol, ");
-      sql.append("NVL(SUM(CASE WHEN b.acc_item = '2253-02EA' THEN b.bill_item_amt ELSE 0 END), 0) AS hCol, ");
-      sql.append("NVL(SUM(CASE WHEN b.acc_item = '2253-02EC' THEN b.bill_item_amt ELSE 0 END), 0) AS iCol, ");
-      sql.append("NVL(SUM(CASE WHEN b.rcv_item = '1178-29' THEN b.bill_item_amt ELSE 0 END), 0) AS jCol ");
+      sql.append("NVL(SUM(CASE WHEN b.rcv_item = '2825-2402' THEN b.bill_item_amt ELSE 0 END), 0) AS aCol, ");
+      sql.append("NVL(SUM(CASE WHEN b.rcv_item = '2825-2403' THEN b.bill_item_amt ELSE 0 END), 0) AS bCol, ");
+      sql.append("NVL(SUM(CASE WHEN b.rcv_item = '2825-2404' THEN b.bill_item_amt ELSE 0 END), 0) AS cCol, ");
+      sql.append("NVL(SUM(CASE WHEN b.rcv_item = '2825-2405' THEN b.bill_item_amt ELSE 0 END), 0) AS dCol, ");
+      sql.append("NVL(SUM(CASE WHEN b.rcv_item = '2825-2406' THEN b.bill_item_amt ELSE 0 END), 0) AS eCol, ");
+      sql.append("NVL(SUM(CASE WHEN b.rcv_item = '1816-2401' THEN b.bill_item_amt ELSE 0 END), 0) AS fCol, ");
+      sql.append("NVL(SUM(CASE WHEN b.rcv_item = '1816-2402A' THEN b.bill_item_amt ELSE 0 END), 0) AS gCol, ");
+      sql.append("NVL(SUM(CASE WHEN b.rcv_item = '2253-02EA' THEN b.bill_item_amt ELSE 0 END), 0) AS hCol, ");
+      sql.append("NVL(SUM(CASE WHEN b.rcv_item = '2253-02EC' THEN b.bill_item_amt ELSE 0 END), 0) AS iCol, ");
+      sql.append("NVL(SUM(CASE WHEN b.acc_item in ('1178-29N', '1178-29S') THEN b.bill_item_amt ELSE 0 END), 0) AS jCol ");
       sql.append(
           "FROM (SELECT DISTINCT BU_GROUP_MARK FROM rpt_account) a LEFT JOIN rpt_account b ON a.bu_group_mark = b.bu_group_mark ");
       sql.append(
-          "AND (b.acc_item IN ('2825-2402', '2825-2403', '2825-2404', '2825-2405', '2825-2406', '1816-2401', '1816-2402A', '2253-02EA', '2253-02EC') or b.rcv_item IN ('1178-29')) ");
+          "AND (b.rcv_item IN ('2825-2402', '2825-2403', '2825-2404', '2825-2405', '2825-2406', '1816-2401', '1816-2402A', '2253-02EA', '2253-02EC') or b.acc_item IN ('1178-29N', '1178-29S')) ");
       sql.append("AND b.bu_group_mark IN ('A', 'B', 'C') ");
       sql.append(
           " AND TO_NUMBER(SUBSTR(b.bill_month, 1, 3)) = TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'YYYY')) - 1911 \n");
@@ -175,30 +177,57 @@ public interface RptAccountSummaryMapper {
       return sql.toString();
     }
 
-    private String generateSelectBody() {
+    private String generateSelectBody(Boolean isD4) {
       StringBuilder sql = new StringBuilder();
-      sql.append("    COALESCE(cm.currentMonthBadDebt, 0) AS currentMonthBadDebt, \n");
-      sql.append("    COALESCE(cm.currentMonthNonBadDebt, 0) AS currentMonthNonBadDebt, \n");
-      sql.append("    COALESCE(fm.futureMonthsBadDebt, 0) AS futureMonthsBadDebt, \n");
-      sql.append("    COALESCE(fm.futureMonthsNonBadDebt, 0) AS futureMonthsNonBadDebt, \n");
+      
+      if (isD4) {
+        sql.append("    SUM(COALESCE(cm.currentMonthBadDebt, 0)) AS currentMonthBadDebt, \n");
+        sql.append("    SUM(COALESCE(cm.currentMonthNonBadDebt, 0)) AS currentMonthNonBadDebt, \n");
+        sql.append("    SUM(COALESCE(fm.futureMonthsBadDebt, 0)) AS futureMonthsBadDebt, \n");
+        sql.append("    SUM(COALESCE(fm.futureMonthsNonBadDebt, 0)) AS futureMonthsNonBadDebt, \n");
+  
+        for (int year = 1; year <= 11; year++) {
+          sql.append("    SUM(COALESCE(y").append(year).append(".year").append(year).append("BadDebt, 0)) AS year")
+              .append(year).append("BadDebt, \n");
+          sql.append("    SUM(COALESCE(y").append(year).append(".year").append(year).append("NonBadDebt, 0)) AS year")
+              .append(year).append("NonBadDebt, \n");
+        }
+  
+        StringBuilder totalBadDebt = new StringBuilder("SUM(COALESCE(cm.currentMonthBadDebt, 0) + COALESCE(fm.futureMonthsBadDebt, 0)");
+        StringBuilder totalNonBadDebt = new StringBuilder("SUM(COALESCE(cm.currentMonthNonBadDebt, 0) + COALESCE(fm.futureMonthsNonBadDebt, 0)");
+  
+        for (int year = 1; year <= 11; year++) {
+          totalBadDebt.append(" + COALESCE(y").append(year).append(".year").append(year).append("BadDebt, 0)");
+          totalNonBadDebt.append(" + COALESCE(y").append(year).append(".year").append(year).append("NonBadDebt, 0)");
+        }
 
-      for (int year = 1; year <= 11; year++) {
-        sql.append("    COALESCE(y").append(year).append(".year").append(year).append("BadDebt, 0) AS year")
-            .append(year).append("BadDebt, \n");
-        sql.append("    COALESCE(y").append(year).append(".year").append(year).append("NonBadDebt, 0) AS year")
-            .append(year).append("NonBadDebt, \n");
+        sql.append(totalBadDebt).append(") AS totalBadDebt, \n");
+        sql.append(totalNonBadDebt).append(") AS totalNonBadDebt \n");
+      } else {
+        sql.append("    COALESCE(cm.currentMonthBadDebt, 0) AS currentMonthBadDebt, \n");
+        sql.append("    COALESCE(cm.currentMonthNonBadDebt, 0) AS currentMonthNonBadDebt, \n");
+        sql.append("    COALESCE(fm.futureMonthsBadDebt, 0) AS futureMonthsBadDebt, \n");
+        sql.append("    COALESCE(fm.futureMonthsNonBadDebt, 0) AS futureMonthsNonBadDebt, \n");
+  
+        for (int year = 1; year <= 11; year++) {
+          sql.append("    COALESCE(y").append(year).append(".year").append(year).append("BadDebt, 0) AS year")
+              .append(year).append("BadDebt, \n");
+          sql.append("    COALESCE(y").append(year).append(".year").append(year).append("NonBadDebt, 0) AS year")
+              .append(year).append("NonBadDebt, \n");
+        }
+  
+        StringBuilder totalBadDebt = new StringBuilder("COALESCE(cm.currentMonthBadDebt, 0) + COALESCE(fm.futureMonthsBadDebt, 0)");
+        StringBuilder totalNonBadDebt = new StringBuilder("COALESCE(cm.currentMonthNonBadDebt, 0) + COALESCE(fm.futureMonthsNonBadDebt, 0)");
+  
+        for (int year = 1; year <= 11; year++) {
+          totalBadDebt.append(" + COALESCE(y").append(year).append(".year").append(year).append("BadDebt, 0)");
+          totalNonBadDebt.append(" + COALESCE(y").append(year).append(".year").append(year).append("NonBadDebt, 0)");
+        }
+
+        sql.append(totalBadDebt).append(" AS totalBadDebt, \n");
+        sql.append(totalNonBadDebt).append(" AS totalNonBadDebt \n");
       }
 
-      StringBuilder totalBadDebt = new StringBuilder("COALESCE(cm.currentMonthBadDebt, 0) + COALESCE(fm.futureMonthsBadDebt, 0)");
-      StringBuilder totalNonBadDebt = new StringBuilder("COALESCE(cm.currentMonthNonBadDebt, 0) + COALESCE(fm.futureMonthsNonBadDebt, 0)");
-
-      for (int year = 1; year <= 11; year++) {
-        totalBadDebt.append(" + COALESCE(y").append(year).append(".year").append(year).append("BadDebt, 0)");
-        totalNonBadDebt.append(" + COALESCE(y").append(year).append(".year").append(year).append("NonBadDebt, 0)");
-      }
-
-      sql.append(totalBadDebt).append(" AS totalBadDebt, \n");
-      sql.append(totalNonBadDebt).append(" AS totalNonBadDebt \n");
       return sql.toString();
     }
 
@@ -213,23 +242,28 @@ public interface RptAccountSummaryMapper {
       sql.append(generateYearCTE("ACC_ITEM", 1, 11));
 
       sql.append("SELECT \n");
-      sql.append("    ratd.BILL_ACC_ITEM AS accItem, \n");
-      sql.append("    ratd.BILL_OVD_ITEM AS ovdItem, \n");
-      sql.append("    ratd.BILL_ACC_NAME AS accName, \n");
-      sql.append(generateSelectBody());
+      sql.append("    COALESCE(ratd.BILL_ACC_ITEM, 'OTHER') AS accItem, \n");
+      sql.append("    COALESCE(ratd.BILL_OVD_ITEM, 'OTHER') AS ovdItem, \n");
+      sql.append("    COALESCE(ratd.BILL_ACC_NAME, 'OTHER') AS accName, \n");
+      sql.append(generateSelectBody(true));
 
       sql.append("\n");
 
       sql.append("FROM \n");
       sql.append("    RPT_ACC_TYPE_DETL ratd \n");
-      sql.append("LEFT JOIN currentMonth cm ON ratd.BILL_ACC_ITEM = cm.ACC_ITEM \n");
-      sql.append("LEFT JOIN futureMonths fm ON ratd.BILL_ACC_ITEM = fm.ACC_ITEM \n");
+      sql.append("FULL JOIN currentMonth cm ON ratd.BILL_ACC_ITEM = cm.ACC_ITEM \n");
+      sql.append("FULL JOIN futureMonths fm ON ratd.BILL_ACC_ITEM = fm.ACC_ITEM \n");
 
       // 添加 year_1 到 year_11 的 JOIN
       for (int year = 1; year <= 11; year++) {
-        sql.append("LEFT JOIN year_").append(year).append(" y").append(year).append(" ON ratd.BILL_ACC_ITEM = y")
+        sql.append("FULL JOIN year_").append(year).append(" y").append(year).append(" ON ratd.BILL_ACC_ITEM = y")
             .append(year).append(".ACC_ITEM \n");
       }
+
+      sql.append("GROUP BY \n");
+      sql.append("    COALESCE(ratd.BILL_ACC_ITEM, 'OTHER'), \n");
+      sql.append("    COALESCE(ratd.BILL_OVD_ITEM, 'OTHER'), \n");
+      sql.append("    COALESCE(ratd.BILL_ACC_NAME, 'OTHER') \n");
 
       sql.append("ORDER BY \n");
       sql.append("    accItem");
@@ -258,7 +292,7 @@ public interface RptAccountSummaryMapper {
       }
 
       sql.append(") AS billOffBelong, \n");
-      sql.append(generateSelectBody());
+      sql.append(generateSelectBody(false));
 
       sql.append("\n");
 

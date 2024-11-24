@@ -15,7 +15,7 @@ import lombok.Data;
 @Entity
 @NamedEntityGraph(
     name = "RptAccount.withItemType", attributeNodes = { @NamedAttributeNode("rptItemTypeDetl") })
-@Table(name = "RPT_ACCOUNT", schema = "BPUSER")
+@Table(name = "RPT_ACCOUNT")
 @Data
 public class RptAccount {
   @Id @Column(name = "BILL_OFF_BELONG") private String billOffBelong;

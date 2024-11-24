@@ -12,7 +12,7 @@ import lombok.Data;
 
 @Entity
 @IdClass(CompositeKey.class)
-@Table(name = "RPT_BILL_MAIN", schema = "BPUSER")
+@Table(name = "RPT_BILL_MAIN")
 @Data
 public class RptBillMain {
   @Column(name = "BILL_ID_MARK", length = 1) private String billIdMark;

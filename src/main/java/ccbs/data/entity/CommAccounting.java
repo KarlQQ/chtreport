@@ -8,7 +8,7 @@ import lombok.Data;
 import org.hibernate.annotations.Formula;
 
 @Entity
-@Table(name = "COMM_ACCOUNTING", schema = "BPUSER")
+@Table(name = "COMM_ACCOUNTING")
 @Data
 public class CommAccounting {
   @Id @Column(name = "SYSTEM_ID", length = 1) private String systemId;

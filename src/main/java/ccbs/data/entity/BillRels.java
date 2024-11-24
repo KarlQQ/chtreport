@@ -11,7 +11,7 @@ import lombok.Data;
 
 @IdClass(ccbs.data.entity.BillRels.CompositeKey.class)
 @Entity
-@Table(name = "BILL_RELS", schema = "BPUSER")
+@Table(name = "BILL_RELS")
 @Data
 public class BillRels {
   @Column(name = "BILL_OFF_BELONG", length = 4) private String billOffBelong;

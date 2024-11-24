@@ -296,7 +296,7 @@ public class RptController {
       // downFilePath = watermarkFilePath;
 
       return downloadPdfFile(downFilePath, fileName, input.getDownloadRptEmpId());
-    } else if (extensionFileName.equals("csv")) {
+    } else if (extensionFileName.equals("csv") || extensionFileName.equals("TXT")) {
       try {
         // input.setDownloadRptEmpId(input.getRptFileName().substring(11, 17));
         String empIdFromWeb = input.getDownloadRptEmpId();

@@ -1865,23 +1865,28 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     String csvFileName = "BP2240D1_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
     // 建立 CsvGenerator 物件
-    CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 11, ",");
+    CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 12, ",");
 
     for (Map.Entry<String, Map<String, RptBP2240D1Summary>> buGroupEntry :
         groupedSummaries.entrySet()) {
       String buGroupMark = buGroupEntry.getKey();
+      String buGroupName = NameMapping.getBusinessGroupName(buGroupMark);
+
       List<String> header01 = new ArrayList<>();
-      header01.add(NameMapping.getBusinessGroupName(buGroupMark));
+      header01.add(buGroupName);
+      header01.add("");
+      header01.add("MOD 催收轉列營收統計表");
+      header01.add("");
+      header01.add("報表日期：" + opcDate);
       csvGenerator.writeData(0, header01);
 
       List<String> header02 = new ArrayList<>();
-      header02.add("MOD 催收轉列營收統計表");
-      header02.add("");
-      header02.add("");
-      header02.add("報表日期：" + opcDate);
-      csvGenerator.writeData(1, header02);
+      header02.add(buGroupName);
+      csvGenerator.writeData(0, header02);
 
       List<String> header03 = new ArrayList<>();
+      header03.add(buGroupName);
+      header03.add("");
       header03.add("\"2825.2402\"");
       header03.add("\"2825.2403\"");
       header03.add("\"2825.2404\"");
@@ -1891,10 +1896,11 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       header03.add("\"1816.2402A\"");
       header03.add("\"2253.02EA\"");
       header03.add("\"2253.02EC\"");
-      header03.add("\"1178.29\"");
-      csvGenerator.writeData(1, header03);
+      header03.add("\"1178.29N/1178.29S\"");
+      csvGenerator.writeData(0, header03);
 
       List<String> header04 = new ArrayList<>();
+      header04.add(buGroupName);
       for (int i = 0; i < 11; i++) {
         header04.add("===============");
       }
@@ -1918,6 +1924,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           RptBP2240D1Summary summary = billOffEntry.getValue();
 
           List<String> body = new ArrayList<>();
+          body.add(buGroupName);
           body.add(getOfficeName(billOffBelong));
           body.add(StringUtils.formatNumberWithCommas(summary.getACol()));
           body.add(StringUtils.formatNumberWithCommas(summary.getBCol()));
@@ -1945,6 +1952,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       }
 
       List<String> footer = new ArrayList<>();
+      footer.add(buGroupName);
       footer.add("總計");
       footer.add(StringUtils.formatNumberWithCommas(sumACol));
       footer.add(StringUtils.formatNumberWithCommas(sumBCol));
@@ -2077,15 +2085,24 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
     for (RptBP2230D4Summary summary : rptBP2230D4Summaries) {
       List<String> dataRow = new ArrayList<>();
-      dataRow.add(summary.getAccItem());
-      if (summary.getOvdItem() != null && !summary.getOvdItem().trim().isEmpty()) {
-        dataRow.add("+");
-        dataRow.add(summary.getOvdItem());
+      String accItem = summary.getAccItem();
+
+      if ("OTHER".equals(accItem)) {
+        dataRow.add("1144-11N/1144-11S");
+        dataRow.add("");
+        dataRow.add("");
+        dataRow.add("其他");
       } else {
-        dataRow.add("");
-        dataRow.add("");
+        dataRow.add(accItem);
+        if (summary.getOvdItem() != null && !summary.getOvdItem().trim().isEmpty()) {
+          dataRow.add("+");
+          dataRow.add(summary.getOvdItem());
+        } else {
+          dataRow.add("");
+          dataRow.add("");
+        }
+        dataRow.add(summary.getAccName());
       }
-      dataRow.add(summary.getAccName());
 
       BigDecimal futureMonthsNonBadDebt = summary.getFutureMonthsNonBadDebt() != null
           ? summary.getFutureMonthsNonBadDebt()
@@ -2314,7 +2331,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     String rocMM = rocYYYMM.substring(3, 5);
     List<String> header01 = new ArrayList<>();
     String headerString = String.format(
-        "%s 年 %s 月  北分欠費依會計科目【非呆帳】統計表       製表日期 %s", rocYYY, rocMM, rocDate);
+        "%s 年 %s 月  中華電信欠費依會計科目【非呆帳】統計表       製表日期 %s", rocYYY, rocMM, rocDate);
     header01.add(headerString);
     csvGenerator.writeData(0, header01);
 

@@ -8,7 +8,7 @@ import javax.persistence.Table;
 import lombok.Data;
 
 @Entity
-@Table(name = "BILL_DEVICE", schema = "BPUSER")
+@Table(name = "BILL_DEVICE")
 @Data
 public class BillDevice {
   @Column(name = "BILL_OFF_BELONG", length = 4) private String billOffBelong;
