@@ -2091,7 +2091,12 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         dataRow.add("1144-11N/1144-11S");
         dataRow.add("");
         dataRow.add("");
-        dataRow.add("其他");
+        dataRow.add("1144-11N/1144-11S");
+      } else if (accItem == null) {
+        dataRow.add(summary.getOvdItem());
+        dataRow.add("");
+        dataRow.add("");
+        dataRow.add(summary.getAccName());
       } else {
         dataRow.add(accItem);
         if (summary.getOvdItem() != null && !summary.getOvdItem().trim().isEmpty()) {
@@ -2376,15 +2381,28 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
       for (RptBP2230D6Summary summary : rptBP2230D6Summaries) {
         List<String> dataRow = new ArrayList<>();
-        dataRow.add(summary.getAccItem());
-        if (summary.getOvdItem() != null && !summary.getOvdItem().trim().isEmpty()) {
-          dataRow.add("+");
+        String accItem = summary.getAccItem();
+        if ("OTHER".equals(accItem)) {
+          dataRow.add("1144-11N/1144-11S");
+          dataRow.add("");
+          dataRow.add("");
+          dataRow.add("1144-11N/1144-11S");
+        } else if (accItem == null) {
           dataRow.add(summary.getOvdItem());
+          dataRow.add("");
+          dataRow.add("");
+          dataRow.add(summary.getAccName());
         } else {
-          dataRow.add("");
-          dataRow.add("");
+          dataRow.add(accItem);
+          if (summary.getOvdItem() != null && !summary.getOvdItem().trim().isEmpty()) {
+            dataRow.add("+");
+            dataRow.add(summary.getOvdItem());
+          } else {
+            dataRow.add("");
+            dataRow.add("");
+          }
+          dataRow.add(summary.getAccName());
         }
-        dataRow.add(summary.getAccName());
 
         for (int month = 1; month <= 12; month++) {
           BigDecimal yearNonBadDebt = (BigDecimal) summary.getClass()

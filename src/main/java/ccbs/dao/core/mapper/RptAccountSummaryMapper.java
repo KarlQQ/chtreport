@@ -56,12 +56,12 @@ public interface RptAccountSummaryMapper {
       } else if (dateType != null && !dateType.isEmpty()) {
         if (dateType.equals(DateTypeConstants.ACU_X_2M)) {
           // 統計至執行日的前2個月
-          sql.append("WHERE TO_NUMBER(SUBSTR(a0.bill_month, 1, 3)) = TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'YYYY')) - 1911 ");
-          sql.append("AND TO_NUMBER(SUBSTR(a0.bill_month, 4, 2)) <= TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'MM')) - 2");
+          sql.append("WHERE TO_NUMBER(SUBSTR(a0.bill_month, 1, 3)) = TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -2), 'YYYY')) - 1911 ");
+          sql.append("AND TO_NUMBER(SUBSTR(a0.bill_month, 4, 2)) <= TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -2), 'MM'))");
         } else if (dateType.equals(DateTypeConstants.ACU_X_1M)) {
           // 統計至執行日的前1個月
-          sql.append("WHERE TO_NUMBER(SUBSTR(a0.bill_month, 1, 3)) = TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'YYYY')) - 1911 ");
-          sql.append("AND TO_NUMBER(SUBSTR(a0.bill_month, 4, 2)) <= TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'MM')) - 1");
+          sql.append("WHERE TO_NUMBER(SUBSTR(a0.bill_month, 1, 3)) = TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -1), 'YYYY')) - 1911 ");
+          sql.append("AND TO_NUMBER(SUBSTR(a0.bill_month, 4, 2)) <= TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -1), 'MM'))");
         } else if (dateType.equals(DateTypeConstants.SUM_X_1Y)) {
           // 單獨統計執行日的前1年該年度
           sql.append(
@@ -235,6 +235,27 @@ public interface RptAccountSummaryMapper {
       StringBuilder sql = new StringBuilder();
 
       sql.append("WITH \n");
+      sql.append("unmatched_items AS ( \n");
+      sql.append("    SELECT DISTINCT ACC_ITEM \n");
+      sql.append("    FROM RPT_ACCOUNT ra \n");
+      sql.append("    WHERE NOT EXISTS ( \n");
+      sql.append("        SELECT 1 \n");
+      sql.append("        FROM RPT_ACC_TYPE_DETL ratd \n");
+      sql.append("        WHERE ra.ACC_ITEM = ratd.BILL_ACC_ITEM OR ra.ACC_ITEM = ratd.BILL_OVD_ITEM \n");
+      sql.append("    ) \n");
+      sql.append("), \n");
+      sql.append("combined_items AS ( \n");
+      sql.append("    SELECT TRIM(LEAST(BILL_ACC_ITEM, BILL_OVD_ITEM)) AS ACC_ITEM_1, \n");
+      sql.append("           GREATEST(BILL_ACC_ITEM, BILL_OVD_ITEM) AS ACC_ITEM_2, \n");
+      sql.append("           BILL_ACC_NAME, \n");
+      sql.append("           'N' AS is_unmatched \n");
+      sql.append("    FROM RPT_ACC_TYPE_DETL \n");
+      sql.append("    WHERE TRIM(BILL_ACC_ITEM) IS NOT NULL \n");
+      sql.append("    GROUP BY LEAST(BILL_ACC_ITEM, BILL_OVD_ITEM), GREATEST(BILL_ACC_ITEM, BILL_OVD_ITEM), BILL_ACC_NAME \n");
+      sql.append("    UNION ALL \n");
+      sql.append("    SELECT ACC_ITEM, NULL, 'OTHER', 'Y' \n");
+      sql.append("    FROM unmatched_items \n");
+      sql.append("), \n");
       sql.append(generateMonthCTE("ACC_ITEM", "currentMonth", "0", "currentMonth"));
       sql.append(generateMonthCTE("ACC_ITEM","futureMonths", "1", "futureMonths"));
 
@@ -242,30 +263,30 @@ public interface RptAccountSummaryMapper {
       sql.append(generateYearCTE("ACC_ITEM", 1, 11));
 
       sql.append("SELECT \n");
-      sql.append("    COALESCE(ratd.BILL_ACC_ITEM, 'OTHER') AS accItem, \n");
-      sql.append("    COALESCE(ratd.BILL_OVD_ITEM, 'OTHER') AS ovdItem, \n");
-      sql.append("    COALESCE(ratd.BILL_ACC_NAME, 'OTHER') AS accName, \n");
+      sql.append("    CASE WHEN ratd.is_unmatched = 'Y' THEN 'OTHER' ELSE ratd.ACC_ITEM_1 END AS accItem, \n");
+      sql.append("    ratd.ACC_ITEM_2 AS ovdItem, \n");
+      sql.append("    MAX(ratd.BILL_ACC_NAME) AS accName, \n");
       sql.append(generateSelectBody(true));
 
       sql.append("\n");
 
       sql.append("FROM \n");
-      sql.append("    RPT_ACC_TYPE_DETL ratd \n");
-      sql.append("FULL JOIN currentMonth cm ON ratd.BILL_ACC_ITEM = cm.ACC_ITEM \n");
-      sql.append("FULL JOIN futureMonths fm ON ratd.BILL_ACC_ITEM = fm.ACC_ITEM \n");
+      sql.append("    combined_items ratd \n");
+      sql.append("LEFT JOIN currentMonth cm ON ratd.ACC_ITEM_1 = cm.ACC_ITEM OR ratd.ACC_ITEM_2 = cm.ACC_ITEM \n");
+      sql.append("LEFT JOIN futureMonths fm ON ratd.ACC_ITEM_1 = fm.ACC_ITEM OR ratd.ACC_ITEM_2 = fm.ACC_ITEM  \n");
 
       // 添加 year_1 到 year_11 的 JOIN
       for (int year = 1; year <= 11; year++) {
-        sql.append("FULL JOIN year_").append(year).append(" y").append(year).append(" ON ratd.BILL_ACC_ITEM = y")
-            .append(year).append(".ACC_ITEM \n");
+        sql.append("LEFT JOIN year_").append(year).append(" y").append(year).append(" ON ratd.ACC_ITEM_1 = y")
+            .append(year).append(".ACC_ITEM OR ratd.ACC_ITEM_2 = y").append(year).append(".ACC_ITEM \n");
       }
 
       sql.append("GROUP BY \n");
-      sql.append("    COALESCE(ratd.BILL_ACC_ITEM, 'OTHER'), \n");
-      sql.append("    COALESCE(ratd.BILL_OVD_ITEM, 'OTHER'), \n");
-      sql.append("    COALESCE(ratd.BILL_ACC_NAME, 'OTHER') \n");
+      sql.append("    CASE WHEN ratd.is_unmatched = 'Y' THEN 'OTHER' ELSE ratd.ACC_ITEM_1 END, \n");
+      sql.append("    ratd.ACC_ITEM_2 \n");
 
       sql.append("ORDER BY \n");
+      sql.append("    CASE WHEN accItem = 'OTHER' THEN 1 ELSE 0 END, \n");
       sql.append("    accItem");
 
       String finalSql = sql.toString();
@@ -322,6 +343,27 @@ public interface RptAccountSummaryMapper {
       StringBuilder sql = new StringBuilder();
 
       sql.append("WITH \n");
+      sql.append("unmatched_items AS ( \n");
+      sql.append("    SELECT DISTINCT ACC_ITEM \n");
+      sql.append("    FROM RPT_ACCOUNT ra \n");
+      sql.append("    WHERE NOT EXISTS ( \n");
+      sql.append("        SELECT 1 \n");
+      sql.append("        FROM RPT_ACC_TYPE_DETL ratd \n");
+      sql.append("        WHERE ra.ACC_ITEM = ratd.BILL_ACC_ITEM OR ra.ACC_ITEM = ratd.BILL_OVD_ITEM \n");
+      sql.append("    ) \n");
+      sql.append("), \n");
+      sql.append("combined_items AS ( \n");
+      sql.append("    SELECT TRIM(LEAST(BILL_ACC_ITEM, BILL_OVD_ITEM)) AS ACC_ITEM_1, \n");
+      sql.append("           GREATEST(BILL_ACC_ITEM, BILL_OVD_ITEM) AS ACC_ITEM_2, \n");
+      sql.append("           BILL_ACC_NAME, \n");
+      sql.append("           'N' AS is_unmatched \n");
+      sql.append("    FROM RPT_ACC_TYPE_DETL \n");
+      sql.append("    WHERE TRIM(BILL_ACC_ITEM) IS NOT NULL \n");
+      sql.append("    GROUP BY LEAST(BILL_ACC_ITEM, BILL_OVD_ITEM), GREATEST(BILL_ACC_ITEM, BILL_OVD_ITEM), BILL_ACC_NAME \n");
+      sql.append("    UNION ALL \n");
+      sql.append("    SELECT ACC_ITEM, NULL, 'OTHER', 'Y' \n");
+      sql.append("    FROM unmatched_items \n");
+      sql.append("), \n");
       sql.append("monthly AS (\n");
       sql.append("    SELECT ACC_ITEM,\n");
       sql.append("           TO_NUMBER(SUBSTR(ra.bill_month, 4, 2)) AS month,\n");
@@ -332,9 +374,9 @@ public interface RptAccountSummaryMapper {
       sql.append("    GROUP BY ACC_ITEM, TO_NUMBER(SUBSTR(ra.bill_month, 4, 2))\n");
       sql.append(")\n");
       sql.append("SELECT \n");
-      sql.append("    ratd.BILL_ACC_ITEM AS accItem,\n");
-      sql.append("    ratd.BILL_OVD_ITEM AS ovdItem,\n");
-      sql.append("    ratd.BILL_ACC_NAME AS accName,\n");
+      sql.append("    CASE WHEN ratd.is_unmatched = 'Y' THEN 'OTHER' ELSE ratd.ACC_ITEM_1 END AS accItem,\n");
+      sql.append("    ratd.ACC_ITEM_2 AS ovdItem,\n");
+      sql.append("    MAX(ratd.BILL_ACC_NAME) AS accName,\n");
       for (int month = 1; month <= 12; month++) {
         sql.append("    COALESCE(MAX(CASE WHEN month = ").append(month).append(" THEN nonBadDebt ELSE 0 END), 0) AS nonBadDebt_").append(month).append(",\n");
       }
@@ -345,11 +387,13 @@ public interface RptAccountSummaryMapper {
       sql.setLength(sql.length() - 2); // 移除最後一個逗號
       sql.append("\n");
       sql.append("FROM \n");
-      sql.append("    monthly m\n");
-      sql.append("JOIN RPT_ACC_TYPE_DETL ratd ON m.ACC_ITEM = ratd.BILL_ACC_ITEM\n");
+      sql.append("    combined_items ratd \n");
+      sql.append("LEFT JOIN monthly cm ON ratd.ACC_ITEM_1 = cm.ACC_ITEM OR ratd.ACC_ITEM_2 = cm.ACC_ITEM \n");
       sql.append("GROUP BY \n");
-      sql.append("    ratd.BILL_ACC_ITEM, ratd.BILL_OVD_ITEM, ratd.BILL_ACC_NAME\n");
+      sql.append("    CASE WHEN ratd.is_unmatched = 'Y' THEN 'OTHER' ELSE ratd.ACC_ITEM_1 END,\n");
+      sql.append("    ratd.ACC_ITEM_2\n");
       sql.append("ORDER BY \n");
+      sql.append("    CASE WHEN accItem = 'OTHER' THEN 1 ELSE 0 END, \n");
       sql.append("    accItem");
 
       String finalSql = sql.toString();
