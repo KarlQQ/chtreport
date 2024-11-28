@@ -14,7 +14,7 @@ import ccbs.model.online.BatchRptQueryOut;
 import ccbs.model.online.Bp01f0003Input;
 import ccbs.model.online.Bp01f0007Input;
 import ccbs.model.online.Bp01f0013Input;
-import ccbs.model.online.Bp01f0015Input;
+import ccbs.model.online.GetRpoCodeOptIn;
 import ccbs.model.online.OfficeInfoQueryIn;
 import ccbs.model.online.OfficeInfoQueryOut;
 import ccbs.model.online.RptCategoryOut;
@@ -55,13 +55,14 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 // import need to be remove, tmp reserve
 @RestController
 @RequestMapping("/rpt/api")
-@CrossOrigin(origins = {"http://localhost:8080/", "http://1.34.130.80:8080",
-                 "https://ccbsetest.cht.com.tw", "http://bpdb.cht.com.tw:8080"})
+@CrossOrigin(origins = "*", exposedHeaders = HttpHeaders.CONTENT_DISPOSITION,
+    methods = {RequestMethod.GET, RequestMethod.POST})
 public class RptController {
   protected final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -96,7 +97,7 @@ public class RptController {
 
   @Operation(summary = "應收會計欠費統計表(非呆帳)", tags = {"Reports"},
       description = "應收會計欠費統計表(非呆帳)")
-  @PostMapping(value="/downloadReceivableArrears", produces = "application/json;charset=UTF-8")
+  @PostMapping(value = "/downloadReceivableArrears", produces = "application/json;charset=UTF-8")
   public ResponseEntity<?>
   downloadReceivableArrears(@RequestBody BatchSimpleRptInStr input) {
     try {
@@ -127,6 +128,8 @@ public class RptController {
       headers.add(HttpHeaders.CONTENT_DISPOSITION,
           String.format("attachment; filename=\"%s\"", reportFile.getName()));
       headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
+      headers.add(
+          HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
       return ResponseEntity.ok()
           .headers(headers)
@@ -220,8 +223,13 @@ public class RptController {
       }
 
       // 種類 rpt 0 代表為不分，設Null
-      if (input.getRptCategory().equals("---全部---")) {
+      if (input.getRptCategory().equals("0")) {
         input.setRptCategory(null);
+      }
+
+      // 種類 rpt 0 代表為不分，設Null
+      if (input.getRptCode().equals("0")) {
+        input.setRptCode(null);
       }
 
       if (!input.getRptDateStart().trim().isEmpty()) {
@@ -325,9 +333,12 @@ public class RptController {
           // Create InputStreamResource
           InputStreamResource resource = new InputStreamResource(new FileInputStream(file));
 
+          HttpHeaders headers = new HttpHeaders();
+          headers.add(HttpHeaders.CONTENT_DISPOSITION,
+              String.format("attachment; filename=\"%s\"", file.getName()));
           // Set the content type and attachment header
           return ResponseEntity.ok()
-              .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + file.getName())
+              .headers(headers)
               .contentLength(file.length())
               .contentType(MediaType.APPLICATION_OCTET_STREAM)
               .body(resource);
@@ -498,8 +509,11 @@ public class RptController {
 
   @Operation(summary = "取得報表種類選單", tags = {"Reports"}, description = "取得報表種類選單")
   @PostMapping("/getRptCodeOptions")
-  public List<RptCategoryOut> getRptCodeOptions(@RequestBody UserInfoQueryIn input) {
-    List<RptCategoryOut> rptOptionList = rptLogService.getRptCodeOptions();
+  public List<RptCategoryOut> getRptCodeOptions(@RequestBody GetRpoCodeOptIn input) {
+    if (input.getFunCode().equals("0")) {
+      input.setFunCode(null);
+    }
+    List<RptCategoryOut> rptOptionList = rptLogService.getRptCodeOptions(input.getFunCode());
     return rptOptionList;
   }
 

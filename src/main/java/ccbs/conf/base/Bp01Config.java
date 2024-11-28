@@ -64,12 +64,14 @@ public class Bp01Config {
     private String rptCode;
     private String filename;
     private Years years;
+    private List<String> titles = Collections.emptyList();
   }
 
   @Data
   public static class Bp01f0003Config {
     private String rptCode;
     private String filename;
+    private Years years;
     private List<GroupBillItem> groupBillItems;
     private List<TypeItem> rptCustTypes;
 
@@ -89,8 +91,7 @@ public class Bp01Config {
 
   @Data
   public static class Years {
-    private Integer start = 0;
+    private Integer shift = 0;
     private Integer length = 0;
-    private List<String> titles = Collections.emptyList();
   }
 }

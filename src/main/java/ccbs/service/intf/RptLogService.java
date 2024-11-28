@@ -19,7 +19,7 @@ public interface RptLogService {
 
     public List<BatchRptQueryOut> batchRptQuery(BatchRptQueryIn input) ;
 
-    public List<RptCategoryOut> getRptCodeOptions();
+    public List<RptCategoryOut> getRptCodeOptions(String funCode);
 
     public List<RptCategoryOut> getFunCodeOptions();
 }

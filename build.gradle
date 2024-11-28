@@ -7,7 +7,6 @@ plugins {
 
 group = 'com.ccbs'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '1.8'
 
 java {
     toolchain {
@@ -87,6 +86,8 @@ dependencies {
 
     // HttpClient
     implementation 'commons-httpclient:commons-httpclient:3.1'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'org.apache.httpcomponents:httpcore:4.4.16'
 
     // BouncyCastle for Encryption
     implementation 'org.bouncycastle:bcprov-jdk18on:1.74'
@@ -99,8 +100,6 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test:2.6.7'
 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-
 }
 
 tasks.withType(JavaCompile) {
@@ -109,8 +108,14 @@ tasks.withType(JavaCompile) {
 
 bootJar {
     archiveFileName = 'rpt-api.jar'
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// tasks.named('bootRun') {
+//     args = ['--spring.profiles.active=local']
+// }

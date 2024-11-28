@@ -11,7 +11,10 @@ import ccbs.util.StatisticUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -34,22 +37,33 @@ public class Bp01f0013ServiceImpl implements Bp01f0013Service {
   @Override
   @RptLogExecution(rptCode = "BP2230D2")
   public Result process(String jobId, String opcDate, String opcYearMonth, String isRerun) {
-    String rocYearMonth = String.valueOf(Integer.valueOf(opcYearMonth) - 191100);
+    String rocYearMonth =
+        LocalDate.parse(opcYearMonth + "01", DateTimeFormatter.ofPattern("yyyyMMdd"))
+            .plusMonths(config.getYears().getShift())
+            .format(DateTimeFormatter.ofPattern("yyyMM").withChronology(
+                java.time.chrono.MinguoChronology.INSTANCE));
     Integer startROCYear =
-        Integer.parseInt(rocYearMonth.substring(0, 3)) + config.getYears().getStart();
-    Integer endROCYear = startROCYear - config.getYears().getTitles().size() + 1;
+        Integer.parseInt(rocYearMonth.substring(0, 3)) - config.getYears().getShift();
+    Integer endROCYear = startROCYear - config.getTitles().size() + 1;
 
     List<String> report = new ArrayList<>();
-    report.addAll(getHeader(opcDate, opcYearMonth, startROCYear, config.getYears().getTitles()));
+    report.addAll(getHeader(opcDate, rocYearMonth, startROCYear, config.getTitles()));
 
     Map<String, Integer> fieldMapping =
-        IntStream.range(0, config.getYears().getTitles().size())
+        IntStream.range(0, config.getTitles().size())
             .boxed()
             .collect(Collectors.toMap(
                 index -> String.valueOf(startROCYear - index), Function.identity()));
     List<Bp01f0013DTO> resultList = rptAccountRepository.analysisOutstandingArrears(
         String.valueOf(endROCYear), String.valueOf(startROCYear));
     Map<String, List<Double>> records = aggregateData(fieldMapping, resultList);
+
+    double totalAmount = records.values()
+                             .stream()
+                             .flatMap(Collection::stream)
+                             .mapToDouble(Double::doubleValue)
+                             .sum();
+
     report.addAll(records.entrySet()
                       .stream()
                       .map(entry -> {
@@ -57,21 +71,32 @@ public class Bp01f0013ServiceImpl implements Bp01f0013Service {
                         return resultList.stream()
                             .filter(result -> key.equals(result.getAccItem()))
                             .findAny()
-                            .map(result
-                                -> new StringBuffer(key)
-                                       .append(",")
-                                       .append(result.getAccName())
-                                       .append(",")
-                                       .append(entry.getValue()
-                                                   .stream()
-                                                   .map(val -> String.format("%.0f", val))
-                                                   .collect(Collectors.joining(", ")))
-                                       .append(System.lineSeparator())
-                                       .toString())
+                            .map(result -> {
+                              double rowTotal =
+                                  entry.getValue().stream().mapToDouble(Double::doubleValue).sum();
+                              double percentage =
+                                  (totalAmount == 0) ? 0 : (rowTotal / totalAmount) * 100;
+
+                              return new StringBuffer(key)
+                                  .append(",")
+                                  .append(result.getAccName())
+                                  .append(",")
+                                  .append(entry.getValue()
+                                              .stream()
+                                              .map(val -> String.format("%.0f", val))
+                                              .collect(Collectors.joining(", ")))
+                                  .append(",")
+                                  .append(String.format("%.0f", rowTotal))
+                                  .append(",")
+                                  .append(String.format("%.2f", percentage))
+                                  .append(System.lineSeparator())
+                                  .toString();
+                            })
                             .orElse(null);
                       })
                       .collect(Collectors.toList()));
-    report.addAll(getFooter(records));
+
+    report.addAll(getFooter(records, totalAmount));
 
     try {
       String filePath =
@@ -125,13 +150,13 @@ public class Bp01f0013ServiceImpl implements Bp01f0013Service {
       h2.append(",").append(startROCYear - index).append(" 年　度");
       h3.append(",").append(titles.get(index));
     });
-    return List.of(h1, h2.append(System.lineSeparator()).toString(),
-        h3.append(System.lineSeparator()).toString());
+    return List.of(h1, h2.append(",,").append(System.lineSeparator()).toString(),
+        h3.append(",總計,占總欠費比率").append(System.lineSeparator()).toString());
   }
 
-  private List<String> getFooter(Map<String, List<Double>> records) {
+  private List<String> getFooter(Map<String, List<Double>> records, double totalAmount) {
     StringBuffer f1 = new StringBuffer(",總計,").append(
         String.join(",", StatisticUtils.calculateStatistics(records.values())));
-    return List.of(f1.toString());
+    return List.of(f1.append(",").append(totalAmount).append(",100%").toString());
   }
 }

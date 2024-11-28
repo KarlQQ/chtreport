@@ -4,6 +4,7 @@ package ccbs.template;
 import ccbs.model.bp01.Bp01f0007Form.FormData;
 import ccbs.model.bp01.Bp01f0007Form.FormData.FormDataBuilder;
 import java.math.BigDecimal;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -47,7 +48,9 @@ public class Bp01f0007TemplaeTxt {
         .billTel(input.length() > 57 ? input.substring(46, 58) : null)
         .billIdMark(input.length() > 59 ? input.substring(58, 60) : null)
         .billMonth(input.length() > 64 ? input.substring(60, 65) : null)
-        .billAmt(input.length() > 74 ? new BigDecimal(input.substring(65, 75).trim()) : null)
+        .billAmt(input.length() > 74 && Strings.isNotEmpty(input.substring(65, 75).trim())
+                ? new BigDecimal(input.substring(65, 75).trim())
+                : null)
         .billIdno(input.length() > 84 ? input.substring(75, 85) : null)
         .payLimit(input.length() > 91 ? input.substring(85, 92) : null)
         .telStatus(input.length() > 92 ? input.substring(92, 93) : null)

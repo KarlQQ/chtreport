@@ -30,6 +30,9 @@ public class BatchRptQueryIn {
     @Schema(description = "週期", example = "")
     private String rptPeriod;
 
+    @Schema(description = "報表名稱", example = "")
+    private String rptCode;
+
     @Schema(description = "年月", example = "")
     private String rptYearMonth;
 

@@ -25,7 +25,7 @@
     <logger name="org.thymeleaf" level="INFO" />
     <logger name="io.swagger.v3.core.converter" level="INFO" />
 
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE"/>
     </root>

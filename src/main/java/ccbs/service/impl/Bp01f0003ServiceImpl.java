@@ -14,6 +14,8 @@ import ccbs.util.comm01.Comm01Service;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +41,11 @@ public class Bp01f0003ServiceImpl implements Bp01f0003Service {
   @Override
   @RptLogExecution(rptCode = "BP220RPT")
   public Result process(String jobId, String opcDate, String opcYearMonth, String isRerun) {
-    String rocYearMonth = String.valueOf(Integer.valueOf(opcYearMonth) - 191100);
+    String rocYearMonth =
+        LocalDate.parse(opcYearMonth + "01", DateTimeFormatter.ofPattern("yyyyMMdd"))
+            .plusMonths(config.getYears().getShift())
+            .format(DateTimeFormatter.ofPattern("yyyMM").withChronology(
+                java.time.chrono.MinguoChronology.INSTANCE));
     List<Bp01f0003DTO> reusltList = rptAccountRepository.summaryBusinessODArrears(rocYearMonth);
     Map<String, String> billOffBelongMapping = getBillOffBelongMapping(reusltList);
 

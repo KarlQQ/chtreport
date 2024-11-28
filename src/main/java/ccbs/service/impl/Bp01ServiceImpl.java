@@ -218,7 +218,7 @@ public class Bp01ServiceImpl implements Bp01Service {
   public Result process0015(String jobId, String opcDate, String opcYearMonth, String isRerun) {
     String rocYearMonth = String.valueOf(Integer.valueOf(opcYearMonth) - 191100);
     Integer startROCYear =
-        Integer.parseInt(rocYearMonth.substring(0, 3)) + config0015.getYears().getStart();
+        Integer.parseInt(rocYearMonth.substring(0, 3)) + config0015.getYears().getShift();
     Integer endROCYear = startROCYear - config0015.getYears().getLength() + 1;
 
     List<AccountAggregationDto> resultList =
@@ -255,7 +255,7 @@ public class Bp01ServiceImpl implements Bp01Service {
     List<String> report =
         new ArrayList<>(bp01f0015TemplaeCsv.getTitle(opcDate, String.valueOf(startROCYear)));
     report.addAll(
-        IntStream.range(config0015.getYears().getStart(), config0015.getYears().getLength())
+        IntStream.range(config0015.getYears().getShift(), config0015.getYears().getLength())
             .mapToObj(index -> {
               List<String> cotent = new ArrayList<String>();
               cotent.addAll(
