@@ -18,9 +18,9 @@ public interface ArrearsService {
 
   public Result batchBP2230D4D5Rpt(BatchSimpleRptInStr input) throws Exception;
 
-  public String batchBP2230D4Rpt(BatchSimpleRptInStr input) throws Exception;
+  public dData batchBP2230D4Rpt(BatchSimpleRptInStr input) throws Exception;
 
-  public String batchBP2230D5Rpt(BatchSimpleRptInStr input) throws Exception;
+  public dData batchBP2230D5Rpt(BatchSimpleRptInStr input) throws Exception;
 
   public Result batchBP2230D6Rpt(BatchSimpleRptInStr input) throws Exception;
   

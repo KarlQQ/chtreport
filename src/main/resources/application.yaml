@@ -66,7 +66,7 @@ ccbs:
     bp01f0007:
       rpt-code: BPGSM010
       filename: BPGSM010_%s%s%s.TXT
-      file-source: /workspaces/ccbs/chtccbs/out/in/bpgsm010
+      file-source: /workspaces/ccbs/chtreport/out/in/bpgsm010
       file-pattern-1: BPGSM010_MBMS_\d*\.TXT
       file-pattern-2: BPGSM010_CCBS_\d*\.TXT
 

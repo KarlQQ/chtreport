@@ -18,8 +18,8 @@ public class Bp01f0007TemplaeTxt {
         padRight(record.getIdno(), 10), padRight(record.getResult(), 1),
         padRight(record.getEmpId(), 6), padRight(record.getEmpIdOff(), 4),
         padRight(record.getBillOff(), 4), padLeft(record.getBillTel(), 12),
-        padRight(record.getBillIdMark(), 1), padRight(record.getBillMonth(), 5),
-        padRight(record.getBillAmt() != null ? record.getBillAmt().toPlainString() : "", 10),
+        padRight(record.getBillIdMark(), 1), padLeft(record.getBillMonth(), 5),
+        padLeft(record.getBillAmt() != null ? record.getBillAmt().toPlainString() : "", 10),
         padRight(record.getBillIdno(), 10), padRight(record.getPayLimit(), 7),
         padRight(record.getTelStatus(), 1), padRight(record.getDrDate(), 1),
         padRight(record.getRemark(), 1), padRight(record.getGreed(), 1),
@@ -43,7 +43,7 @@ public class Bp01f0007TemplaeTxt {
         .idno(input.length() > 30 ? input.substring(21, 31) : null)
         .result(input.length() > 31 ? input.substring(31, 32) : null)
         .empId(input.length() > 37 ? input.substring(32, 38) : null)
-        .empIdOff(input.length() > 41 ? input.substring(38, 42) : null)
+        .empIdOff(input.length() > 41 ? input.substring(38, 42).trim() : null)
         .billOff(input.length() > 45 ? input.substring(42, 46) : null)
         .billTel(input.length() > 57 ? input.substring(46, 58) : null)
         .billIdMark(input.length() > 59 ? input.substring(58, 60) : null)

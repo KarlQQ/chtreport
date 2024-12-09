@@ -4,18 +4,19 @@ import ccbs.conf.aop.RptLogExecution;
 import ccbs.conf.base.Bp01Config.Bp01f0003Config;
 import ccbs.conf.base.Bp01Config.TypeItem;
 import ccbs.data.repository.RptAccountRepository;
+import ccbs.model.batch.dData;
 import ccbs.model.bp01.Bp01f0003DTO;
 import ccbs.model.online.OfficeInfoQueryIn;
 import ccbs.model.online.OfficeInfoQueryOut;
 import ccbs.service.intf.Bp01Service.Result;
 import ccbs.service.intf.Bp01f0003Service;
+import ccbs.util.DateUtils;
 import ccbs.util.FileUtils;
 import ccbs.util.comm01.Comm01Service;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,10 +43,7 @@ public class Bp01f0003ServiceImpl implements Bp01f0003Service {
   @RptLogExecution(rptCode = "BP220RPT")
   public Result process(String jobId, String opcDate, String opcYearMonth, String isRerun) {
     String rocYearMonth =
-        LocalDate.parse(opcYearMonth + "01", DateTimeFormatter.ofPattern("yyyyMMdd"))
-            .plusMonths(config.getYears().getShift())
-            .format(DateTimeFormatter.ofPattern("yyyMM").withChronology(
-                java.time.chrono.MinguoChronology.INSTANCE));
+        DateUtils.toRocYearMonth(opcYearMonth, config.getYears().getShift(), ChronoUnit.MONTHS);
     List<Bp01f0003DTO> reusltList = rptAccountRepository.summaryBusinessODArrears(rocYearMonth);
     Map<String, String> billOffBelongMapping = getBillOffBelongMapping(reusltList);
 
@@ -106,10 +104,12 @@ public class Bp01f0003ServiceImpl implements Bp01f0003Service {
           .rptCode(config.getRptCode())
           .isRerun(isRerun)
           .opBatchno(jobId)
-          .rptFileName(reportFile.getName())
-          .billMonth(rocYearMonth)
-          .rptDate(opcDate)
-          .rptFileCount(report.size())
+          .dDataList(List.of(dData.builder()
+                                 .rptFileName(reportFile.getName())
+                                 .billMonth(DateUtils.toRocYearMonth(opcYearMonth))
+                                 .rptDate(opcDate)
+                                 .rptFileCount(report.size())
+                                 .build()))
           .reportFile(reportFile)
           .build();
     } catch (IOException e) {

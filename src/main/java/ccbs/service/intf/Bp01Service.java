@@ -22,34 +22,34 @@ public interface Bp01Service {
   @Getter
   public static class Result implements RptLogAspect.WraperResponse {
     private String rptCode;
+    @Builder.Default private Integer errorount = 0;
     private String isRerun;
     private String opBatchno;
+    private File reportFile;
+    private List<dData> dDataList;
     private String rptFileName;
     private String billMonth;
     private String rptDate;
     private Integer rptFileCount;
-    private File reportFile;
-    private List<dData> dDataList;
 
     @Override
     public RptLogAfterExecuteInputStr getInput() {
+      if (dDataList == null) {
+        dDataList = List.of(dData.builder()
+                                .rptFileName(rptFileName)
+                                .billMonth(billMonth)
+                                .rptDate(rptDate)
+                                .rptFileCount(rptFileCount)
+                                .build());
+      }
       return RptLogAfterExecuteInputStr.builder()
           .rptCode(rptCode)
           .createEmpid("SYSTEM")
-          .createCount(4)
-          .errorount(0)
+          .createCount(dDataList.size())
+          .errorount(errorount)
           .opBatchno(opBatchno)
           .isRerun(isRerun)
-          .dDataSet(dDataList != null ? dDataList
-                                      : List.of(dData.builder()
-                                                    .rptFileName(rptFileName)
-                                                    .billOff("2")
-                                                    .rptTimes("3")
-                                                    .billMonth(billMonth)
-                                                    .rptDate(rptDate)
-                                                    .rptFileCount(rptFileCount)
-                                                    .rptSecretMark("N")
-                                                    .build()))
+          .dDataSet(dDataList)
           .build();
     }
   }

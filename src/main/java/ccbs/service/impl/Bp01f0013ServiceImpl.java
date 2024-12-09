@@ -3,16 +3,17 @@ package ccbs.service.impl;
 import ccbs.conf.aop.RptLogExecution;
 import ccbs.conf.base.Bp01Config.Bp01f0013Config;
 import ccbs.data.repository.RptAccountRepository;
+import ccbs.model.batch.dData;
 import ccbs.model.bp01.Bp01f0013DTO;
 import ccbs.service.intf.Bp01Service.Result;
 import ccbs.service.intf.Bp01f0013Service;
+import ccbs.util.DateUtils;
 import ccbs.util.FileUtils;
 import ccbs.util.StatisticUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,10 +39,7 @@ public class Bp01f0013ServiceImpl implements Bp01f0013Service {
   @RptLogExecution(rptCode = "BP2230D2")
   public Result process(String jobId, String opcDate, String opcYearMonth, String isRerun) {
     String rocYearMonth =
-        LocalDate.parse(opcYearMonth + "01", DateTimeFormatter.ofPattern("yyyyMMdd"))
-            .plusMonths(config.getYears().getShift())
-            .format(DateTimeFormatter.ofPattern("yyyMM").withChronology(
-                java.time.chrono.MinguoChronology.INSTANCE));
+        DateUtils.toRocYearMonth(opcYearMonth, config.getYears().getShift(), ChronoUnit.MONTHS);
     Integer startROCYear =
         Integer.parseInt(rocYearMonth.substring(0, 3)) - config.getYears().getShift();
     Integer endROCYear = startROCYear - config.getTitles().size() + 1;
@@ -106,10 +104,12 @@ public class Bp01f0013ServiceImpl implements Bp01f0013Service {
           .rptCode(config.getRptCode())
           .isRerun(isRerun)
           .opBatchno(jobId)
-          .rptFileName(reportFile.getName())
-          .billMonth(rocYearMonth)
-          .rptDate(opcDate)
-          .rptFileCount(report.size())
+          .dDataList(List.of(dData.builder()
+                                 .rptFileName(reportFile.getName())
+                                 .billMonth(DateUtils.toRocYearMonth(opcYearMonth))
+                                 .rptDate(opcDate)
+                                 .rptFileCount(report.size())
+                                 .build()))
           .reportFile(reportFile)
           .build();
     } catch (IOException e) {

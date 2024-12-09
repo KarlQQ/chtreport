@@ -213,22 +213,22 @@ public class RptController {
       }
 
       // 報表產制頻率 rpt times 0 代表為不分，設Null
-      if (input.getRptTimes().equals("0")) {
+      if ("0".equals(input.getRptTimes())) {
         input.setRptTimes(null);
       }
 
       // 週期 rpt period 0 代表為不分，設Null
-      if (input.getRptPeriod().equals("0")) {
+      if ("0".equals(input.getRptPeriod())) {
         input.setRptPeriod(null);
       }
 
       // 種類 rpt 0 代表為不分，設Null
-      if (input.getRptCategory().equals("0")) {
+      if ("0".equals(input.getRptCategory())) {
         input.setRptCategory(null);
       }
 
       // 種類 rpt 0 代表為不分，設Null
-      if (input.getRptCode().equals("0")) {
+      if ("0".equals(input.getRptCode())) {
         input.setRptCode(null);
       }
 
@@ -250,7 +250,7 @@ public class RptController {
         input.setRptYearMonth(rocYearMonth);
       }
 
-      if (!input.getRptSecretMark().trim().isEmpty() && input.getRptSecretMark().equals("B")) {
+      if (!input.getRptSecretMark().trim().isEmpty() && "B".equals(input.getRptSecretMark())) {
         input.setRptSecretMark(null);
       } else {
         input.setRptSecretMark("N");
@@ -498,7 +498,7 @@ public class RptController {
           OfficeInfoQueryOut comm01_0003 = comm01Service.COMM01_0003(
               OfficeInfoQueryIn.builder().officeCode(billOffId).transType("A").build());
           return RptCategoryOut.builder()
-              .name(comm01_0003.getResultStatus().equals("0")
+              .name("0".equals(comm01_0003.getResultStatus())
                       ? comm01_0003.getResultOfficeCN().trim()
                       : billOffId)
               .code(billOffId)
@@ -510,7 +510,7 @@ public class RptController {
   @Operation(summary = "取得報表種類選單", tags = {"Reports"}, description = "取得報表種類選單")
   @PostMapping("/getRptCodeOptions")
   public List<RptCategoryOut> getRptCodeOptions(@RequestBody GetRpoCodeOptIn input) {
-    if (input.getFunCode().equals("0")) {
+    if ("0".equals(input.getFunCode())) {
       input.setFunCode(null);
     }
     List<RptCategoryOut> rptOptionList = rptLogService.getRptCodeOptions(input.getFunCode());

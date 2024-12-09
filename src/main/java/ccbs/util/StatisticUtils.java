@@ -1,8 +1,6 @@
 package ccbs.util;
 
 import java.math.BigDecimal;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
@@ -10,13 +8,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class StatisticUtils {
-  public static String calculateQuarter(String opcYearMonth) {
-    YearMonth yearMonth = YearMonth.parse(opcYearMonth, DateTimeFormatter.ofPattern("yyyyMM"));
-    int month = yearMonth.getMonthValue();
-    int quarter = (month - 1) / 3 + 1;
-    return String.valueOf(quarter);
-  }
-
   public static List<String> performStatistics(Collection<List<BigDecimal>> records) {
     return performStatistics(records, BigDecimal::toPlainString);
   }

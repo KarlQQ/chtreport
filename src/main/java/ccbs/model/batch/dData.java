@@ -18,9 +18,11 @@ import lombok.ToString;
 public class dData {
   @Schema(description = "報表檔名", example = "") private String rptFileName;
 
-  @Schema(description = "機構代號", example = "") private String billOff;
+  @Builder.Default @Schema(description = "機構代號", example = "") private String billOff = "2";
 
-  @Schema(description = "報表產制頻率", example = "") private String rptTimes;
+  @Builder.Default
+  @Schema(description = "報表產制頻率", example = "")
+  private String rptTimes = "3";
 
   @Schema(description = "報表產制年月", example = "") private String billMonth;
 
@@ -36,5 +38,7 @@ public class dData {
 
   @Schema(description = "報表檔總金額", example = "") private BigDecimal rptFileAmt;
 
-  @Schema(description = "報表機敏識別", example = "") private String rptSecretMark;
+  @Builder.Default
+  @Schema(description = "報表機敏識別", example = "")
+  private String rptSecretMark = "N";
 }

@@ -17,8 +17,8 @@ import ccbs.model.bp01.Bp01f0007Form.FormData.FormDataBuilder;
 import ccbs.service.intf.Bp01Service;
 import ccbs.template.Bp01f0007TemplaeTxt;
 import ccbs.template.Bp01f0015TemplaeCsv;
+import ccbs.util.DateUtils;
 import ccbs.util.FileUtils;
-import ccbs.util.StatisticUtils;
 import ccbs.util.comm01.Comm01ServiceImpl;
 import java.io.File;
 import java.io.IOException;
@@ -66,24 +66,17 @@ public class Bp01ServiceImpl implements Bp01Service {
     try {
       if ("1".equals(inputType)) {
         paths = FileUtils.moveFilesMatchingPattern(
-          config0007.getFileSource(), null, config0007.getFilePattern1());
+            config0007.getFileSource(), null, config0007.getFilePattern1());
       }
       if ("2".equals(inputType)) {
         paths = FileUtils.moveFilesMatchingPattern(
-          config0007.getFileSource(), null, config0007.getFilePattern2());
+            config0007.getFileSource(), null, config0007.getFilePattern2());
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
 
-    dDataBuilder dDataBuilder =
-        dData.builder()
-            .rptTimes("1")
-            .billMonth(String.valueOf(Integer.valueOf(opcYearMonth) - 191100))
-            .rptDate(opcDate)
-            .rptQuarter(StatisticUtils.calculateQuarter(opcYearMonth));
-
-    List<dData> dData = new ArrayList<>();
+    List<dData> dDataList = new ArrayList<>();
     for (Path path : paths) {
       List<String> report = new ArrayList<>();
       List<String> fileContent;
@@ -94,12 +87,20 @@ public class Bp01ServiceImpl implements Bp01Service {
         continue;
       }
 
+      dDataBuilder dDataBuilder = dData.builder()
+                                      .rptTimes("1")
+                                      .billMonth(DateUtils.toRocYearMonth(opcYearMonth))
+                                      .rptDate(opcDate)
+                                      .rptQuarter(DateUtils.calculateQuarter(opcYearMonth));
       boolean rptSecretMark = false;
       for (String line : fileContent) {
         FormDataBuilder formDataBuilder = bp01f0007TemplaeTxt.fromFixedLengthString(line);
         FormData formData = formDataBuilder.build();
         if (formData.getTela() == null) {
           continue;
+        }
+        if (formData.getEmpIdOff() != null) {
+          dDataBuilder.billOff(formData.getEmpIdOff());
         }
         List<RptBillMain> rptBillMainList =
             billRelsRepo.findBySubTela(formData.getTela())
@@ -170,6 +171,7 @@ public class Bp01ServiceImpl implements Bp01Service {
                                 .comboAccNoMark(
                                     Strings.isBlank(rptBillMain.getComboAccNo()) ? "N" : "Y")
                                 .debtMark(rptBillMain.getDebtMark())
+                                .billIdno(rptBillMain.getBillIdno())
                                 .build()))
                     .collect(Collectors.toList()));
           } else {
@@ -190,10 +192,12 @@ public class Bp01ServiceImpl implements Bp01Service {
                         opcDate, rptSecretMark ? "_MASK" : ""))
                 .toString();
         File reportFile = FileUtils.generateFile(filePath, report);
-        dData.add(dDataBuilder.rptFileName(reportFile.getName())
-                      .rptFileCount(report.size())
-                      .rptSecretMark(rptSecretMark ? "Y" : "N")
-                      .build());
+        if ("2".equals(inputType)) {
+          dDataList.add(dDataBuilder.rptFileName(reportFile.getName())
+                            .rptFileCount(report.size())
+                            .rptSecretMark(rptSecretMark ? "Y" : "N")
+                            .build());
+        }
       } catch (IOException e) {
         log.error("output file error", e);
       }
@@ -203,7 +207,7 @@ public class Bp01ServiceImpl implements Bp01Service {
         .rptCode(config0007.getRptCode())
         .isRerun(isRerun)
         .opBatchno(jobId)
-        .dDataList(dData)
+        .dDataList(dDataList)
         .build();
   }
 

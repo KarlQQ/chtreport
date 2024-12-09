@@ -2,53 +2,6 @@ package ccbs.service.impl;
 
 import static org.mybatis.dynamic.sql.SqlBuilder.isEqualTo;
 import static org.mybatis.dynamic.sql.SqlBuilder.select;
-import static org.mybatis.dynamic.sql.SqlBuilder.sum;
-
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.math.BigDecimal;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import org.mybatis.dynamic.sql.render.RenderingStrategies;
-import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
-import com.itextpdf.text.BaseColor;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Element;
-import com.itextpdf.text.PageSize;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.Rectangle;
-import com.itextpdf.text.pdf.BaseFont;
-import com.itextpdf.text.pdf.PdfPCell;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
-import com.itextpdf.text.pdf.draw.LineSeparator;
 
 import ccbs.conf.aop.RptLogExecution;
 import ccbs.conf.base.Bp01Config.Bp01f0013Config;
@@ -92,7 +45,50 @@ import ccbs.util.comm01.Comm01Service;
 import ccbs.util.comm01.Comm01ServiceImpl;
 import ccbs.util.comm02.Comm02Service;
 import ccbs.util.comm03.Comm03Service;
+import com.itextpdf.text.BaseColor;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.pdf.BaseFont;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.text.pdf.draw.LineSeparator;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.math.BigDecimal;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
+import org.mybatis.dynamic.sql.render.RenderingStrategies;
+import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
@@ -1448,10 +1444,6 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       BigDecimal totalFBadDebt = BigDecimal.ZERO;
       BigDecimal totalFSubtotal = BigDecimal.ZERO;
 
-
-      
-
-
       for (BP221D6_ReportRowForm row : rows) {
         BigDecimal totalAllNonBadDebt = BigDecimal.ZERO;
         BigDecimal totalAllBadDebt = BigDecimal.ZERO;
@@ -1551,20 +1543,19 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         sumRow.setFSubtotal(totalFSubtotal);
       }
 
-      sumRow.setTotalNonBadDebt(
-          sumRow.getANonBadDebt().add(sumRow.getBNonBadDebt())
-              .add(sumRow.getCNonBadDebt()).add(sumRow.getDNonBadDebt())
-              .add(sumRow.getENonBadDebt()).add(sumRow.getFNonBadDebt())
-      );
-      sumRow.setTotalBadDebt(
-          sumRow.getABadDebt().add(sumRow.getBBadDebt())
-              .add(sumRow.getCBadDebt()).add(sumRow.getDBadDebt())
-              .add(sumRow.getEBadDebt()).add(sumRow.getFBadDebt())
-      );
-      sumRow.setTotalSubtotal(
-          sumRow.getTotalNonBadDebt().add(sumRow.getTotalBadDebt())
-      );
-
+      sumRow.setTotalNonBadDebt(sumRow.getANonBadDebt()
+                                    .add(sumRow.getBNonBadDebt())
+                                    .add(sumRow.getCNonBadDebt())
+                                    .add(sumRow.getDNonBadDebt())
+                                    .add(sumRow.getENonBadDebt())
+                                    .add(sumRow.getFNonBadDebt()));
+      sumRow.setTotalBadDebt(sumRow.getABadDebt()
+                                 .add(sumRow.getBBadDebt())
+                                 .add(sumRow.getCBadDebt())
+                                 .add(sumRow.getDBadDebt())
+                                 .add(sumRow.getEBadDebt())
+                                 .add(sumRow.getFBadDebt()));
+      sumRow.setTotalSubtotal(sumRow.getTotalNonBadDebt().add(sumRow.getTotalBadDebt()));
 
       rows.add(sumRow);
 
@@ -1636,7 +1627,9 @@ public class ArrearsRptServiceImpl implements ArrearsService {
               + oneMonthAgoYear + "年度" + oneMonthAgoMonth + "月（含以前）,,," + oneYearAgoYear
               + "年度,,," + twoYearsAgoYear + "年度（含以前）,,," + lastYearNovemberYear + "年度"
               + lastYearNovemberMonth + "月,,," + lastYearDecemberYear + "年度"
-              + lastYearDecemberMonth + "月,,," + "合計" + ",\n";
+              + lastYearDecemberMonth + "月,,,"
+              + "合計"
+              + ",\n";
           writer.write(header2);
           StringBuilder header3Builder = new StringBuilder(",");
           for (int i = 0; i < 21; i++) {
@@ -1774,12 +1767,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
                         : "0")
                 + "\","
                 + "\""
-                + (row.getTotalBadDebt() != null ? String.format("%,d", row.getTotalBadDebt().longValue())
-                                             : "0")
+                + (row.getTotalBadDebt() != null
+                        ? String.format("%,d", row.getTotalBadDebt().longValue())
+                        : "0")
                 + "\","
                 + "\""
-                + (row.getTotalSubtotal() != null ? String.format("%,d", row.getTotalSubtotal().longValue())
-                                              : "0")
+                + (row.getTotalSubtotal() != null
+                        ? String.format("%,d", row.getTotalSubtotal().longValue())
+                        : "0")
                 + "\"\n";
           } else {
             rowData = "\"" + row.getOffName() + "\","
@@ -1803,14 +1798,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         writer.flush();
         createCount++;
         dDataList.add(dData.builder()
-        .rptFileName(csvFileName)
-        .billOff("2")
-        .rptTimes("3")
-        .billMonth(rocYYYMM)
-        .rptDate(opcDate)
-        .rptFileCount(1)
-        .rptSecretMark("N")
-        .build());
+                          .rptFileName(csvFileName)
+                          .billOff("2")
+                          .rptTimes("3")
+                          .billMonth(rocYYYMM)
+                          .rptDate(opcDate)
+                          .rptFileCount(rows.size() - 1)
+                          .rptSecretMark("N")
+                          .build());
       } catch (IOException e) {
         errorCount++;
         log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
@@ -1862,6 +1857,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           .put(billOffBelong, summary);
     }
 
+    int nonNullBillOffCount = 0;
+    Map<String, RptBP2240D1Summary> billOffMap = new HashMap<>();
     String csvFileName = "BP2240D1_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
     // 建立 CsvGenerator 物件
@@ -1916,11 +1913,12 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       BigDecimal sumHCol = BigDecimal.ZERO;
       BigDecimal sumICol = BigDecimal.ZERO;
       BigDecimal sumJCol = BigDecimal.ZERO;
-      Map<String, RptBP2240D1Summary> billOffMap = buGroupEntry.getValue();
+      billOffMap = buGroupEntry.getValue();
 
       for (Map.Entry<String, RptBP2240D1Summary> billOffEntry : billOffMap.entrySet()) {
         String billOffBelong = billOffEntry.getKey();
         if (billOffBelong != null) {
+          nonNullBillOffCount++; // Increment the count for non-null billOffBelong
           RptBP2240D1Summary summary = billOffEntry.getValue();
 
           List<String> body = new ArrayList<>();
@@ -1978,7 +1976,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .rptFileName(csvFileName)
         .billMonth(rocYYYMM)
         .rptDate(opcDate)
-        .rptFileCount(1)
+        .rptFileCount(nonNullBillOffCount)
         .build();
   }
 
@@ -1999,16 +1997,10 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     String[] reportMethods = {"batchBP2230D4Rpt", "batchBP2230D5Rpt"};
     for (String method : reportMethods) {
       try {
-        String fileName = (String) this.getClass().getMethod(method, BatchSimpleRptInStr.class).invoke(this, input);
-        dDataList.add(dData.builder()
-            .rptFileName(fileName)
-            .billOff("2")
-            .rptTimes("3")
-            .billMonth(rocYYYMM)
-            .rptDate(opcDate)
-            .rptFileCount(1)
-            .rptSecretMark("N")
-            .build());
+        dData outputDData = (dData) this.getClass()
+                                .getMethod(method, BatchSimpleRptInStr.class)
+                                .invoke(this, input);
+        dDataList.add(outputDData);
         createCount++;
       } catch (Exception e) {
         log.error("Error in " + method + ": " + e.getMessage(), e);
@@ -2017,15 +2009,15 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     }
 
     return Result.builder()
-    .rptCode(rptCode)
-    .isRerun(isRerun)
-    .opBatchno(jobId)
-    .dDataList(dDataList)
-    .build();
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .build();
   }
 
   @Override
-  public String batchBP2230D4Rpt(BatchSimpleRptInStr input) throws Exception {
+  public dData batchBP2230D4Rpt(BatchSimpleRptInStr input) throws Exception {
     String rptCode = "BP2230D4";
     String jobId = input.getJobId();
     String opcDate = input.getOpcDate();
@@ -2182,11 +2174,19 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     // 儲存 CSV 檔案
     csvGenerator.save();
 
-    return csvFileName;
+    return dData.builder()
+        .rptFileName(csvFileName)
+        .billOff("2")
+        .rptTimes("3")
+        .billMonth(rocYYYMM)
+        .rptDate(opcDate)
+        .rptFileCount(rptBP2230D4Summaries.size())
+        .rptSecretMark("N")
+        .build();
   }
 
   @Override
-  public String batchBP2230D5Rpt(BatchSimpleRptInStr input) throws Exception {
+  public dData batchBP2230D5Rpt(BatchSimpleRptInStr input) throws Exception {
     String rptCode = "BP2230D4";
     String jobId = input.getJobId();
     String opcDate = input.getOpcDate();
@@ -2312,7 +2312,15 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     // 儲存 CSV 檔案
     csvGenerator.save();
 
-    return csvFileName;
+    return dData.builder()
+        .rptFileName(csvFileName)
+        .billOff("2")
+        .rptTimes("3")
+        .billMonth(rocYYYMM)
+        .rptDate(opcDate)
+        .rptFileCount(rptBP2230D5Summaries.size())
+        .rptSecretMark("N")
+        .build();
   }
 
   @Override
@@ -2335,11 +2343,12 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     String rocYYY = rocYYYMM.substring(0, 3);
     String rocMM = rocYYYMM.substring(3, 5);
     List<String> header01 = new ArrayList<>();
-    String headerString = String.format(
-        "%s 年 %s 月  中華電信欠費依會計科目【非呆帳】統計表       製表日期 %s", rocYYY, rocMM, rocDate);
+    String headerString =
+        String.format("%s 年 %s 月  中華電信欠費依會計科目【非呆帳】統計表       製表日期 %s",
+            rocYYY, rocMM, rocDate);
     header01.add(headerString);
     csvGenerator.writeData(0, header01);
-
+    List<RptBP2230D6Summary> rptBP2230D6Summaries = new ArrayList<>();
 
     // 增加年份循環
     int currentYear = Integer.parseInt(opcYYYMM.substring(0, 4));
@@ -2347,14 +2356,13 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     for (int yearOffset = 0; yearOffset <= 5; yearOffset++) {
       int year = currentYear - yearOffset;
       String searchYearMonth = String.valueOf(year) + currentMonthStr;
-    
-      List<RptBP2230D6Summary> rptBP2230D6Summaries =
-          rptAccountSummaryMapper.selectBP2230D6Summary(searchYearMonth);
+
+      rptBP2230D6Summaries = rptAccountSummaryMapper.selectBP2230D6Summary(searchYearMonth);
 
       List<String> header02 = new ArrayList<>();
       csvGenerator.writeData(0, header02);
       List<String> header03 = new ArrayList<>();
-      header03.add(String.format("%d 年度", year-1911));
+      header03.add(String.format("%d 年度", year - 1911));
       header03.add("");
       header03.add("");
       header03.add("");
@@ -2405,9 +2413,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         }
 
         for (int month = 1; month <= 12; month++) {
-          BigDecimal yearNonBadDebt = (BigDecimal) summary.getClass()
-                                          .getMethod("getNonBadDebt_" + month)
-                                          .invoke(summary);
+          BigDecimal yearNonBadDebt =
+              (BigDecimal) summary.getClass().getMethod("getNonBadDebt_" + month).invoke(summary);
 
           if (yearNonBadDebt == null) {
             yearNonBadDebt = BigDecimal.ZERO;
@@ -2438,27 +2445,26 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       footer.addAll(formattedTotals);
       csvGenerator.writeData(0, footer);
       csvGenerator.nextRow();
-
     }
 
     // 儲存 CSV 檔案
     csvGenerator.save();
 
     dDataList.add(dData.builder()
-            .rptFileName(csvFileName)
-            .billOff("2")
-            .rptTimes("3")
-            .billMonth(rocYYYMM)
-            .rptDate(opcDate)
-            .rptFileCount(1)
-            .rptSecretMark("N")
-            .build());
+                      .rptFileName(csvFileName)
+                      .billOff("2")
+                      .rptTimes("3")
+                      .billMonth(rocYYYMM)
+                      .rptDate(opcDate)
+                      .rptFileCount(rptBP2230D6Summaries.size())
+                      .rptSecretMark("N")
+                      .build());
 
     return Result.builder()
-    .rptCode(rptCode)
-    .isRerun(isRerun)
-    .opBatchno(jobId)
-    .dDataList(dDataList)
-    .build();
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .build();
   }
 }

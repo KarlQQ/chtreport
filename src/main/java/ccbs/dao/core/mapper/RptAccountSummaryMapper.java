@@ -116,9 +116,7 @@ public interface RptAccountSummaryMapper {
           "AND (b.rcv_item IN ('2825-2402', '2825-2403', '2825-2404', '2825-2405', '2825-2406', '1816-2401', '1816-2402A', '2253-02EA', '2253-02EC') or b.acc_item IN ('1178-29N', '1178-29S')) ");
       sql.append("AND b.bu_group_mark IN ('A', 'B', 'C') ");
       sql.append(
-          " AND TO_NUMBER(SUBSTR(b.bill_month, 1, 3)) = TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'YYYY')) - 1911 \n");
-      sql.append(
-          " AND TO_NUMBER(SUBSTR(b.bill_month, 4, 2)) = TO_NUMBER(TO_CHAR(TO_DATE(#{currentDate}, 'YYYYMM'), 'MM')) ");
+          " AND TO_NUMBER(SUBSTR(b.bill_month, 1, 5)) = TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -6), 'YYYYMM')) - 191100 \n");
       sql.append("GROUP BY ");
       sql.append("a.bu_group_mark, b.bill_off_belong ");
       sql.append("ORDER BY ");
