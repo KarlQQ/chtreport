@@ -7,6 +7,8 @@ import io.swagger.v3.oas.models.media.*;
 import ccbs.model.base.media.SchemaType;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ApiSchemaUtils {
     /**
@@ -48,20 +50,28 @@ public class ApiSchemaUtils {
      * @return
      */
     public static Schema mapSchema(PairSchema...pairs) {
-        final Schema schema = new MapSchema();
+        final MapSchema schema = new MapSchema();
+        Map<String, Schema> properties = new HashMap<>();
+        
         Arrays.stream(pairs).forEach(p -> {
+            Schema propertySchema;
             if (SchemaType.Object.equals(p.getSchemaType())) {
-                schema.addProperties(p.getKey(), schema(p.getAClass()));
+                propertySchema = schema(p.getAClass());
             } else if (SchemaType.Array.equals(p.getSchemaType())) {
-                schema.addProperties(p.getKey(), arraySchema(p.getAClass()));
+                propertySchema = arraySchema(p.getAClass());
             } else if (SchemaType.Map.equals(p.getSchemaType())) {
-                schema.addProperties(p.getKey(), mapSchema(p.getPairSchemas()));
+                propertySchema = mapSchema(p.getPairSchemas());
             } else if (SchemaType.Integer.equals(p.getSchemaType())) {
-                schema.addProperties(p.getKey(), new IntegerSchema());
+                propertySchema = new IntegerSchema();
             } else if (SchemaType.String.equals(p.getSchemaType())) {
-                schema.addProperties(p.getKey(), new StringSchema());
+                propertySchema = new StringSchema();
+            } else {
+                propertySchema = new ObjectSchema();
             }
+            properties.put(p.getKey(), propertySchema);
         });
+        
+        schema.setProperties(properties);
         return schema;
     }
 

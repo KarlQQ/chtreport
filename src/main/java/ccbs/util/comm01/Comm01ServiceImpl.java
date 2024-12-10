@@ -387,7 +387,7 @@ public class Comm01ServiceImpl implements Comm01Service {
       log.debug("after post api request, response: ", response);
       log.debug("after post api request, response headers: " + response.getHeaders());
       log.debug(
-          "after post api request, response statusCodeValue: " + response.getStatusCodeValue());
+          "after post api request, response statusCodeValue: " + response.getStatusCode().value());
       log.debug("after post api request, response Status Code: " + response.getStatusCode());
       log.debug("after post api request, response Body: " + response.getBody());
 

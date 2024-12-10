@@ -72,6 +72,7 @@ dependencies {
 // 設定 Java 編譯任務的字元編碼為 UTF-8
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
+    options.compilerArgs << "-Xlint:deprecation" << "-Xlint:unchecked"
 }
 
 // 設定生成的可執行 JAR 檔案名稱為 'rpt-api.jar'，並指定 Java 版本相容性為 17

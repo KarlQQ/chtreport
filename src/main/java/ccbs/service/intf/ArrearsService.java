@@ -2,6 +2,7 @@ package ccbs.service.intf;
 
 import ccbs.model.batch.BatchArrearsInputStr;
 import ccbs.model.batch.BatchSimpleRptInStr;
+import ccbs.model.batch.BatchSimpleRptInStrWithType;
 import ccbs.model.batch.SingleArrearsInputStr;
 import ccbs.model.batch.SingleArrearsOutputStr;
 import ccbs.model.batch.dData;
@@ -30,5 +31,5 @@ public interface ArrearsService {
 
   public Result batchBP22TOTRpt(BatchSimpleRptInStr input) throws Exception;
   
-  public Result batchBPGNERPRpt(BatchSimpleRptInStr input) throws Exception;
+  public Result batchBPGNERPRpt(BatchSimpleRptInStrWithType input) throws Exception;
 }

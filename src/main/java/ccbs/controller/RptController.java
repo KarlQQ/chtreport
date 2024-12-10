@@ -3,6 +3,7 @@ package ccbs.controller;
 import ccbs.dao.core.entity.RptList;
 import ccbs.model.batch.BatchArrearsInputStr;
 import ccbs.model.batch.BatchSimpleRptInStr;
+import ccbs.model.batch.BatchSimpleRptInStrWithType;
 import ccbs.model.batch.RptFileZipEncryptSingleIn;
 import ccbs.model.batch.RptFileZipEncryptSingleOut;
 import ccbs.model.batch.RptLogAfterExecuteInputStr;
@@ -352,7 +353,7 @@ public class RptController {
     return null;
   }
 
-  private ResponseEntity downloadPdfFile(
+  private ResponseEntity<Resource> downloadPdfFile(
       String downFilePath, String fileName, String downloadRptEmpId) {
     RptWatermarkSingleIn rptWatermarkSingleIn = new RptWatermarkSingleIn();
     rptWatermarkSingleIn.setRptFileName(fileName);
@@ -627,7 +628,7 @@ public class RptController {
   description = "產生 SaaS ERP指定系列設備欠費清單")
   @PostMapping(value = "/batchBPGNERPRpt", produces = "application/json;charset=UTF-8")
   public ResponseEntity<String>
-  batchBPGNERPRpt(@RequestBody BatchSimpleRptInStr input) {
+  batchBPGNERPRpt(@RequestBody BatchSimpleRptInStrWithType input) {
     try {
       ResponseEntity<String> response = ValidationUtils.validateBatchSimpleRptInStr(input);
       if (response != null)

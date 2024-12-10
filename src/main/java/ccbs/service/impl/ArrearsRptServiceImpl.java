@@ -29,6 +29,7 @@ import ccbs.model.batch.BP221D6_ReportRowForm;
 import ccbs.model.batch.BPGUSUB_ReportRowForm;
 import ccbs.model.batch.BatchArrearsInputStr;
 import ccbs.model.batch.BatchSimpleRptInStr;
+import ccbs.model.batch.BatchSimpleRptInStrWithType;
 import ccbs.model.batch.IdnoData;
 import ccbs.model.batch.PersonalInfoMaskStr;
 import ccbs.model.batch.RptLogAfterExecuteInputStr;
@@ -43,7 +44,6 @@ import ccbs.model.online.OfficeInfoQueryIn;
 import ccbs.model.online.OfficeInfoQueryOut;
 import ccbs.service.intf.ArrearsService;
 import ccbs.service.intf.Bp01Service.Result;
-import ccbs.service.intf.WebServiceClient;
 import ccbs.util.CsvGenerator;
 import ccbs.util.DateUtils;
 import ccbs.util.NameMapping;
@@ -124,7 +124,6 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   @Autowired private Comm02Service comm02Service;
   @Autowired private Comm01Service comm01Service;
   @Autowired private Bp01f0013Config config;
-  @Autowired private WebServiceClient webServiceClient;
 
   private int inputFilesCnt = 0;
   private int genRptOkFilesCnt = 0;
@@ -2737,7 +2736,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
   @Override
   @RptLogExecution(rptCode = "BPGNERP")
-  public Result batchBPGNERPRpt(BatchSimpleRptInStr input) throws Exception {
+  public Result batchBPGNERPRpt(BatchSimpleRptInStrWithType input) throws Exception {
     String rptCode = "BPGNERP";
     String isRerun = input.getIsRerun();
     String jobId = input.getJobId();
@@ -2836,8 +2835,6 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss"));
       queryInput.setLoginDate(currentDate);
       queryInput.setLoginTime(currentTime);
-
-      queryOutput = webServiceClient.queryAllNameAddrOfBillHistory(queryInput);
 
       if (queryOutput != null && queryOutput.getStatus() != null && queryOutput.getStatus() == "0") {
         // 如果 status = 0，表示成功有資料，退出循環

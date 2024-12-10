@@ -20,8 +20,4 @@ public class BatchSimpleRptInStr {
 
     @Schema(description = "重新執行識別", example = "Y")
     private String isRerun;
-
-    @Schema(description = "設備號碼前贅字", example = "EN07")
-    private String type3;
-
 }
