@@ -1,7 +1,6 @@
 package ccbs.conf.base;
 
-// import oracle.jdbc.pool.OracleDataSource;
-import oracle.jdbc.pool.OracleDataSource;
+import oracle.jdbc.datasource.impl.OracleDataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
@@ -15,33 +14,35 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
+import java.util.Properties;
 
 @Configuration
 @MapperScan(basePackages = {"ccbs.dao.core.mapper"}, sqlSessionFactoryRef = "sqlSessionFactory", nameGenerator = PackageBeanNameGenerator.class)
 @Profile("local")
 public class LocalDataSourceConfig {
+
     @Value("${ds.username}")
     private String username;
+
     @Value("${ds.password}")
     private String password;
+
     @Value("${ds.url}")
     private String url;
 
-//    @Value("${ds.jndi-name}")
-//    private String jndiName;
-
-
     @Bean("dataSource")
     public DataSource dataSource() throws SQLException {
-
         OracleDataSource dataSource = new OracleDataSource();
         dataSource.setUser(username);
         dataSource.setPassword(password);
         dataSource.setURL(url);
-        return dataSource;
 
-//        JndiDataSourceLookup lookup = new JndiDataSourceLookup();
-//        return lookup.getDataSource(jndiName);
+        // 設定其他連線屬性
+        Properties connectionProperties = new Properties();
+        connectionProperties.setProperty("oracle.net.ssl_server_dn_match", "true");
+        dataSource.setConnectionProperties(connectionProperties);
+
+        return dataSource;
     }
 
     @Bean("sqlSessionFactory")
@@ -51,4 +52,8 @@ public class LocalDataSourceConfig {
         return bean.getObject();
     }
 
+    @Bean
+    public PlatformTransactionManager transactionManager(@Qualifier("dataSource") DataSource ds) {
+        return new DataSourceTransactionManager(ds);
+    }
 }

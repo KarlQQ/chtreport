@@ -2,7 +2,7 @@ package ccbs.dao.core.sql;
 
 import java.math.BigDecimal;
 import java.sql.JDBCType;
-import javax.annotation.Generated;
+import jakarta.annotation.Generated;
 import org.mybatis.dynamic.sql.AliasableSqlTable;
 import org.mybatis.dynamic.sql.SqlColumn;
 

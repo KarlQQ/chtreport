@@ -585,4 +585,59 @@ public class RptController {
       return ResponseEntity.internalServerError().body(e.getMessage());
     }
   }
+
+  @Operation(summary = "產生會計科目檔上欠費統計表", tags = {"Reports"},
+  description = "產生會計科目檔上欠費統計表")
+  @PostMapping(value = "/batchBP222OTRpt", produces = "application/json;charset=UTF-8")
+  public ResponseEntity<String>
+  batchBP222OTRpt(@RequestBody BatchSimpleRptInStr input) {
+    try {
+      ResponseEntity<String> response = ValidationUtils.validateBatchSimpleRptInStr(input);
+      if (response != null)
+        return response;
+
+      arrearsService.batchBP222OTRpt(input);
+      arrearsService.batchBP222OT2Rpt(input);
+      return ResponseEntity.ok("會計科目檔上欠費統計表產生成功");
+    } catch (Exception e) {
+      log.error("會計科目檔上欠費統計表產生失敗", e);
+      return ResponseEntity.internalServerError().body(e.getMessage());
+    }
+  }
+  
+  @Operation(summary = "產生全區逾期應收帳款未收回金額比例分析表", tags = {"Reports"},
+  description = "產生全區逾期應收帳款未收回金額比例分析表")
+  @PostMapping(value = "/batchBP22TOTRpt", produces = "application/json;charset=UTF-8")
+  public ResponseEntity<String>
+  batchBP22TOTRpt(@RequestBody BatchSimpleRptInStr input) {
+    try {
+      ResponseEntity<String> response = ValidationUtils.validateBatchSimpleRptInStr(input);
+      if (response != null)
+        return response;
+
+      arrearsService.batchBP22TOTRpt(input);
+      return ResponseEntity.ok("全區逾期應收帳款未收回金額比例分析表產生成功");
+    } catch (Exception e) {
+      log.error("全區逾期應收帳款未收回金額比例分析表產生失敗", e);
+      return ResponseEntity.internalServerError().body(e.getMessage());
+    }
+  }
+
+  @Operation(summary = "產生 SaaS ERP指定系列設備欠費清單", tags = {"Reports"},
+  description = "產生 SaaS ERP指定系列設備欠費清單")
+  @PostMapping(value = "/batchBPGNERPRpt", produces = "application/json;charset=UTF-8")
+  public ResponseEntity<String>
+  batchBPGNERPRpt(@RequestBody BatchSimpleRptInStr input) {
+    try {
+      ResponseEntity<String> response = ValidationUtils.validateBatchSimpleRptInStr(input);
+      if (response != null)
+        return response;
+
+      arrearsService.batchBPGNERPRpt(input);
+      return ResponseEntity.ok("SaaS ERP指定系列設備欠費清單產生成功");
+    } catch (Exception e) {
+      log.error("SaaS ERP指定系列設備欠費清單產生失敗", e);
+      return ResponseEntity.internalServerError().body(e.getMessage());
+    }
+  }
 }

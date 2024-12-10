@@ -3,7 +3,7 @@ package ccbs.dao.core.sql;
 import org.mybatis.dynamic.sql.AliasableSqlTable;
 import org.mybatis.dynamic.sql.SqlColumn;
 
-import javax.annotation.Generated;
+import jakarta.annotation.Generated;
 import java.sql.JDBCType;
 
 public final class RptItemTypeDetlDynamicSqlSupport {

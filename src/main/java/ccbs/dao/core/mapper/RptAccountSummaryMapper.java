@@ -9,6 +9,9 @@ import ccbs.dao.core.entity.RptBP2230D4Summary;
 import ccbs.dao.core.entity.RptBP2230D5Summary;
 import ccbs.dao.core.entity.RptBP2230D6Summary;
 import ccbs.dao.core.entity.RptBP2240D1Summary;
+import ccbs.dao.core.entity.RptBP22TOTSummary;
+import ccbs.dao.core.entity.RptBPGNERPSummary;
+import ccbs.dao.core.entity.RptBP222OTSummary;
 import ccbs.dao.core.constants.DateTypeConstants;
 
 @Mapper
@@ -29,6 +32,17 @@ public interface RptAccountSummaryMapper {
 
   @SelectProvider(type = SqlProvider.class, method = "selectBP2230D6Summary")
   List<RptBP2230D6Summary> selectBP2230D6Summary(@Param("currentDate") String currentDate);
+
+  @SelectProvider(type = SqlProvider.class, method = "selectBP222OTSummary")
+  List<RptBP222OTSummary> selectBP222OTSummary(@Param("currentDate") String currentDate,
+      @Param("rptType") String rptType);
+
+  @SelectProvider(type = SqlProvider.class, method = "selectBP22TOTSummary")
+  List<RptBP22TOTSummary> selectBP22TOTSummary(@Param("currentDate") String currentDate);
+
+  @SelectProvider(type = SqlProvider.class, method = "selectBPGNERPSummary")
+  List<RptBPGNERPSummary> selectBPGNERPSummary(@Param("type3") String type3);
+  
 
   class SqlProvider {
     public String selectRptAccountSummary(@Param("currentDate") String currentDate, @Param("offType") String offType,
@@ -396,6 +410,85 @@ public interface RptAccountSummaryMapper {
 
       String finalSql = sql.toString();
       return finalSql;
+    }
+
+    public String selectBP222OTSummary(@Param("currentDate") String currentDate, @Param("rptType") String rptType) {
+      StringBuilder sql = new StringBuilder();
+
+      sql.append("SELECT \n");
+      if ("2".equals(rptType)) {
+        sql.append("    BILL_OFF_BELONG AS billOffBelong, \n");
+      }
+      sql.append("    BU_GROUP_MARK AS buGroupMark, \n");
+      sql.append("    ACC_ITEM AS accItem, \n");
+      sql.append("    BILL_MONTH AS billMonth, \n");
+      sql.append("    SUM(BILL_ITEM_AMT) AS sumBillItemAmt \n");
+      sql.append("FROM \n");
+      sql.append("    RPT_ACCOUNT ra \n");
+      sql.append("GROUP BY \n");
+      if ("2".equals(rptType)) {
+        sql.append("    BILL_OFF_BELONG, BU_GROUP_MARK, ACC_ITEM, BILL_MONTH \n");
+      } else {
+        sql.append("    BU_GROUP_MARK, ACC_ITEM, BILL_MONTH \n");
+      }
+      
+      sql.append("ORDER BY \n");
+      if ("2".equals(rptType)) {
+        sql.append("    BILL_OFF_BELONG, BU_GROUP_MARK, ACC_ITEM, BILL_MONTH \n");
+      } else {
+        sql.append("    BU_GROUP_MARK, ACC_ITEM, BILL_MONTH \n");
+      }
+      
+      return sql.toString();
+    }
+
+    public String selectBP22TOTSummary(@Param("currentDate") String currentDate) {
+      StringBuilder sql = new StringBuilder();
+
+      sql.append("WITH overdue_months AS ( \n");
+      sql.append("    SELECT TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -4), 'YYYYMM') AS BILL_MONTH, 3 AS OVERDUE_MONTHS FROM dual UNION ALL \n");
+      sql.append("    SELECT TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -7), 'YYYYMM') AS BILL_MONTH, 6 AS OVERDUE_MONTHS FROM dual UNION ALL \n");
+      sql.append("    SELECT TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -10), 'YYYYMM') AS BILL_MONTH, 9 AS OVERDUE_MONTHS FROM dual UNION ALL \n");
+      sql.append("    SELECT TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -13), 'YYYYMM') AS BILL_MONTH, 12 AS OVERDUE_MONTHS FROM dual UNION ALL \n");
+      sql.append("    SELECT TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -16), 'YYYYMM') AS BILL_MONTH, 15 AS OVERDUE_MONTHS FROM dual UNION ALL \n");
+      sql.append("    SELECT TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -19), 'YYYYMM') AS BILL_MONTH, 18 AS OVERDUE_MONTHS FROM dual UNION ALL \n");
+      sql.append("    SELECT TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -25), 'YYYYMM') AS BILL_MONTH, 24 AS OVERDUE_MONTHS FROM dual \n");
+      sql.append(") \n");
+      sql.append("SELECT \n");
+      sql.append("    r.BILL_MONTH AS billMonth, \n");
+      sql.append("    r.BILL_OFF_BELONG AS billOffBelong, \n");
+      sql.append("    SUBSTR(r.ACC_ITEM, 1, INSTR(r.ACC_ITEM, '-') - 1) AS accItem1, \n");
+      sql.append("    SUBSTR(r.ACC_ITEM, INSTR(r.ACC_ITEM, '-') + 1) AS accItem2, \n");
+      sql.append("    SUM(r.BILL_ITEM_AMT) AS sumBillItemAmt \n");
+      sql.append("FROM \n");
+      sql.append("    rpt_account r \n");
+      sql.append("JOIN \n");
+      sql.append("    overdue_months o ON TO_CHAR(TO_NUMBER(SUBSTR(o.BILL_MONTH, 1, 4)) - 1911) || SUBSTR(o.BILL_MONTH, 5, 2) = r.BILL_MONTH \n");
+      sql.append("GROUP BY \n");
+      sql.append("    r.BILL_OFF_BELONG, \n");
+      sql.append("    r.ACC_ITEM, \n");
+      sql.append("    r.BILL_MONTH \n");
+      sql.append("ORDER BY \n");
+      sql.append("    r.BILL_OFF_BELONG ASC, \n");
+      sql.append("    r.BILL_MONTH ASC, \n");
+      sql.append("    r.ACC_ITEM ASC \n");
+      
+      return sql.toString();
+    }
+
+    public String selectBPGNERPSummary(@Param("type3") String type3) {
+      StringBuilder sql = new StringBuilder();
+      sql.append("SELECT \n");
+      sql.append("    BILL_OFF AS billOff, \n");
+      sql.append("    BILL_TEL AS billTel, \n");
+      sql.append("    BILL_MONTH AS billMonth, \n");
+      sql.append("    BILL_IDNO AS billIdno, \n");
+      sql.append("    BILL_AMT AS billAmt \n");
+      sql.append("FROM \n");
+      sql.append("    RPT_BILL_MAIN rbm \n");
+      sql.append("WHERE \n");
+      sql.append("    BILL_TEL LIKE #{type3} || '%' \n");
+      return sql.toString();
     }
   }
 

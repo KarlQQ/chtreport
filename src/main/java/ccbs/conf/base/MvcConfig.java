@@ -6,10 +6,15 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+import org.springframework.util.unit.DataSize;
+import org.springframework.web.multipart.MultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import jakarta.servlet.MultipartConfigElement;
+import org.springframework.boot.web.servlet.MultipartConfigFactory;
 
 @Configuration
 @EnableWebMvc
@@ -26,16 +31,18 @@ public class MvcConfig implements WebMvcConfigurer, ApplicationContextAware {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**");
-//                .allowedOrigins("http://localhost:8081") // Vue.js dev server URL
-//                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-//                .allowedHeaders("*");
     }
-    
-    @Bean(name = "multipartResolver")
-    public CommonsMultipartResolver multipartResolver() {
-        CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
-        multipartResolver.setMaxUploadSize(20971520);
-        multipartResolver.setDefaultEncoding("UTF-8");
-        return multipartResolver;
+
+    @Bean
+    public MultipartResolver multipartResolver() {
+        return new StandardServletMultipartResolver();
+    }
+
+    @Bean
+    public MultipartConfigElement multipartConfigElement() {
+        MultipartConfigFactory factory = new MultipartConfigFactory();
+        factory.setMaxFileSize(DataSize.ofMegabytes(20)); // 單個文件最大20MB
+        factory.setMaxRequestSize(DataSize.ofMegabytes(20)); // 總上傳數據最大20MB
+        return factory.createMultipartConfig();
     }
 }

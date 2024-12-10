@@ -9,4 +9,8 @@ public class StringUtils {
       return "\"" + (number != null ? String.format("%,d", number.longValue()) : "0") + "\"";
   }
 
+  public static String formatStringForCSV(String string) {
+    return "\"" + string + "\"";
+}
+
 }

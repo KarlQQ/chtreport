@@ -1,121 +1,87 @@
+// 套用所需的外掛
 plugins {
+    // 套用 Java 外掛，提供 Java 專案的建置支援
     id 'java'
-    id 'org.springframework.boot' version '2.6.7'
-    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
-
+    // 套用 Spring Boot 外掛，版本為 3.2.12，提供 Spring Boot 應用程式的建置與執行支援
+    id 'org.springframework.boot' version '3.2.12'
+    // 套用 Spring 依賴管理外掛，版本為 1.1.0，協助管理專案中的相依性
+    id 'io.spring.dependency-management' version '1.1.0'
 }
 
+// 設定專案的群組與版本資訊
 group = 'com.ccbs'
 version = '0.0.1-SNAPSHOT'
 
+// 設定 Java 開發工具鏈的語言版本為 17
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
+// 定義相依性儲存庫的位置
 repositories {
+    // 使用 Maven 中央儲存庫作為相依性來源
     mavenCentral()
 }
 
-ext {
-    springBootVersion = '2.6.7'
-    springdocVersion = '1.6.6'
-    mybatiesDynamicSqlVersion = '1.4.0' // 或您所使用的具體版本號
-    lombokVersion = '1.18.24'
-    mapstructVersion = '1.4.2.Final'
-    jacksonVersion = '2.13.1'
-    poiVersion = '5.2.2'
-    oracleVersion = '21.3.0.0'
-    aspectjVersion = '1.9.8'
-}
-
+// 定義專案所需的相依性
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter:2.6.7'
-
-    // Spring Boot Starter Web
+    // Spring Boot Web 起始器，提供建立 Web 應用程式所需的相依性
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
-    // Spring Boot Starter JDBC
+    // 只在編譯時期使用 Lombok，簡化 Java 程式碼的撰寫
+    compileOnly 'org.projectlombok:lombok'
+    // Lombok 的註解處理器，用於在編譯時生成對應的程式碼
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Spring Boot JDBC 起始器，提供 JDBC 的支援
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
-
-    // Spring Boot Starter Data JPA
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-//    // Spring Security
-//    implementation 'org.springframework.boot:spring-boot-starter-security'
-
-    // OpenAPI (SpringDoc)
-    implementation "org.springdoc:springdoc-openapi-ui:${springdocVersion}"
-
-    // MyBatis
-    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.0'
-
-    // mybatis-dynamic-sql
-    implementation "org.mybatis.dynamic-sql:mybatis-dynamic-sql:${mybatiesDynamicSqlVersion}"
-
-    // Logging (Slf4j and Logback)
-    implementation 'org.springframework.boot:spring-boot-starter-logging'
-
-    // Lombok
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
-    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-
-    // Oracle JDBC
-    implementation "com.oracle.database.jdbc:ojdbc8:${oracleVersion}"
+    // 引入本地的 orai18n.jar 檔案，提供 Oracle 特定的國際化支援
     implementation files('libs/orai18n.jar')
+    // Oracle JDBC 驅動程式，版本為 21.1.0.0
+    implementation 'com.oracle.database.jdbc:ojdbc8:21.1.0.0'
 
-    // AspectJ
-    implementation "org.aspectj:aspectjweaver:${aspectjVersion}"
-
-    // Unit Testing with JUnit
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.mockito:mockito-core:4.8.0'
-    testImplementation 'net.bytebuddy:byte-buddy:1.12.0' // 確保版本是最新的
-    testImplementation 'net.bytebuddy:byte-buddy-agent:1.12.0' // 確保版本是最新的
-
-    // Mock Data Tool (Java Faker)
-    implementation 'com.github.javafaker:javafaker:1.0.2'
-
-    // Apache PDFBox
-    implementation 'org.apache.pdfbox:pdfbox:2.0.22'
-
-    // iTextPDF
+    // iText PDF 函式庫，版本為 5.5.13.3，用於生成 PDF 文件
     implementation 'com.itextpdf:itextpdf:5.5.13.3'
-    implementation 'com.itextpdf:itext-asian:5.2.0'
 
-    // HttpClient
-    implementation 'commons-httpclient:commons-httpclient:3.1'
-    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
-    implementation 'org.apache.httpcomponents:httpcore:4.4.16'
-
-    // BouncyCastle for Encryption
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.74'
-
-    // Zip4j for Zip File Operations
+    // Zip4j 函式庫，版本為 2.11.5，用於處理 ZIP 壓縮檔案
     implementation 'net.lingala.zip4j:zip4j:2.11.5'
 
-    implementation 'commons-fileupload:commons-fileupload:1.4'
+    // Bouncy Castle 加密提供者，版本為 1.79，提供加密演算法的實現
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.79'
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.6.7'
+    // MyBatis Spring Boot 起始器，版本為 3.0.4，整合 MyBatis 與 Spring Boot
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4'
+    // MyBatis 動態 SQL，版本為 1.5.2，提供動態生成 SQL 的能力
+    implementation 'org.mybatis.dynamic-sql:mybatis-dynamic-sql:1.5.2'
 
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // SpringDoc OpenAPI 起始器，版本為 2.2.0，提供 OpenAPI 3 的支援
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+
+    // Spring Boot Data JPA 起始器，提供 JPA 的支援
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Apache HttpClient 5，版本為 5.1，用於發送 HTTP 請求
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.1'
+
+    // Spring Boot 測試起始器，提供測試所需的相依性
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
+// 設定 Java 編譯任務的字元編碼為 UTF-8
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
 
+// 設定生成的可執行 JAR 檔案名稱為 'rpt-api.jar'，並指定 Java 版本相容性為 17
 bootJar {
     archiveFileName = 'rpt-api.jar'
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+// 設定測試任務使用 JUnit 平台
 tasks.named('test') {
     useJUnitPlatform()
 }
-
-// tasks.named('bootRun') {
-//     args = ['--spring.profiles.active=local']
-// }

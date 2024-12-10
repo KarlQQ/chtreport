@@ -56,6 +56,13 @@ public class Comm01ServiceImpl implements Comm01Service {
   @Autowired private CommOfficeService commOfficeService;
   @Autowired private RestTemplateConfig restTemplateConfig;
 
+  private final RestTemplate restTemplate;
+
+  @Autowired
+  public Comm01ServiceImpl(RestTemplate restTemplate) {
+      this.restTemplate = restTemplate;
+  }
+
   //        RQBP002_以證號辨別是否為自然人
   public static boolean COMM01_0001(String inputStr) {
     //        inputStr = "D600449832";
@@ -342,8 +349,6 @@ public class Comm01ServiceImpl implements Comm01Service {
   public UserInfoQueryOut COMM001_0005(UserInfoQueryIn userInfoQueryIn) {
     UserInfoQueryOut result = null;
     try {
-      // Create an instance of RestTemplate
-      RestTemplate restTemplate = restTemplateConfig.createRestTemplate();
 
       // Define the URL of the external API
       String url = userInfoApiUrl;

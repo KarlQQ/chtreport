@@ -12,12 +12,18 @@ import ccbs.dao.core.entity.RptBP2230D4Summary;
 import ccbs.dao.core.entity.RptBP2230D5Summary;
 import ccbs.dao.core.entity.RptBP2230D6Summary;
 import ccbs.dao.core.entity.RptBP2240D1Summary;
+import ccbs.dao.core.entity.RptBP22TOTSummary;
+import ccbs.dao.core.entity.RptBPGNERPSummary;
+import ccbs.dao.core.entity.RptBP222OTSummary;
 import ccbs.dao.core.entity.RptBillMain;
 import ccbs.dao.core.mapper.BillRelsMapper;
 import ccbs.dao.core.mapper.RptAccountSummaryMapper;
 import ccbs.dao.core.mapper.RptBillMainMapper;
 import ccbs.dao.core.sql.BillRelsDynamicSqlSupport;
 import ccbs.dao.core.sql.RptBillMainDynamicSqlSupport;
+import ccbs.data.entity.QueryAllNameAddrOfBillHistoryInput;
+import ccbs.data.entity.QueryAllNameAddrOfBillHistoryOutput;
+import ccbs.data.entity.QueryAllNameAddrOfBillHistoryOutput.ListItem;
 import ccbs.model.batch.ArrearsFileLineInput;
 import ccbs.model.batch.BP221D6_ReportRowForm;
 import ccbs.model.batch.BPGUSUB_ReportRowForm;
@@ -37,6 +43,7 @@ import ccbs.model.online.OfficeInfoQueryIn;
 import ccbs.model.online.OfficeInfoQueryOut;
 import ccbs.service.intf.ArrearsService;
 import ccbs.service.intf.Bp01Service.Result;
+import ccbs.service.intf.WebServiceClient;
 import ccbs.util.CsvGenerator;
 import ccbs.util.DateUtils;
 import ccbs.util.NameMapping;
@@ -62,6 +69,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
+import java.net.UnknownHostException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,6 +78,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -83,6 +92,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
@@ -113,6 +124,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   @Autowired private Comm02Service comm02Service;
   @Autowired private Comm01Service comm01Service;
   @Autowired private Bp01f0013Config config;
+  @Autowired private WebServiceClient webServiceClient;
 
   private int inputFilesCnt = 0;
   private int genRptOkFilesCnt = 0;
@@ -2466,5 +2478,376 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .opBatchno(jobId)
         .dDataList(dDataList)
         .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BP222OT")
+  public Result batchBP222OTRpt(BatchSimpleRptInStr input) throws Exception {
+    String rptCode = "BP222OT";
+    String isRerun = input.getIsRerun();
+    String jobId = input.getJobId();
+    String opcDate = input.getOpcDate();
+    String rocDate = DateUtils.convertToRocDate(opcDate);
+    String opcYYYMM = input.getOpcYearMonth();
+    String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
+    Integer errorCount = 0;
+
+    List<dData> dDataList = new ArrayList<>();
+
+    List<RptBP222OTSummary> rptBP222OTSummaries = rptAccountSummaryMapper.selectBP222OTSummary(opcYYYMM, "1");
+
+    String csvFileName = "BP222OT_T" + opcDate + ".csv";
+    String csvFileAbsolutePath = csvFilePath + csvFileName;
+
+    try {
+      // 建立 CsvGenerator 物件
+      CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 4, ",");
+
+      List<String> header01 = Arrays.asList("群別", "會計科目", "出帳年月", "檔上欠費金額");
+      csvGenerator.writeData(0, header01);
+      BigDecimal totalSumBillItemAmt = BigDecimal.ZERO;
+
+      for (RptBP222OTSummary summary : rptBP222OTSummaries) {
+        List<String> dataRow = new ArrayList<>();
+        dataRow.add(summary.getBuGroupMark());
+        dataRow.add(summary.getAccItem());
+        dataRow.add(summary.getBillMonth());
+        BigDecimal sumBillItemAmt = summary.getSumBillItemAmt();
+        dataRow.add(StringUtils.formatNumberWithCommas(sumBillItemAmt));
+
+        totalSumBillItemAmt = totalSumBillItemAmt.add(sumBillItemAmt);
+        csvGenerator.writeData(0, dataRow);
+      }
+
+      // 儲存 CSV 檔案
+      csvGenerator.save();
+
+      dDataList.add(dData.builder()
+          .rptFileName(csvFileName)
+          .rptTimes("3")
+          .billMonth(rocYYYMM)
+          .rptDate(opcDate)
+          .rptFileCount(rptBP222OTSummaries.size())
+          .rptFileAmt(totalSumBillItemAmt)
+          .rptSecretMark("N")
+          .build());
+    } catch (Exception e) {
+      // 處理例外情況
+      log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
+      errorCount++;
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BP222OT2")
+  public Result batchBP222OT2Rpt(BatchSimpleRptInStr input) throws Exception {
+    String rptCode = "BP222OT2";
+    String jobId = input.getJobId();
+    String opcDate = input.getOpcDate();
+    String rocDate = DateUtils.convertToRocDate(opcDate);
+    String opcYYYMM = input.getOpcYearMonth();
+    String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
+    String isRerun = input.getIsRerun();
+    Integer errorCount = 0;
+
+    List<dData> dDataList = new ArrayList<>();
+
+    List<RptBP222OTSummary> rptBP222OTSummaries = rptAccountSummaryMapper.selectBP222OTSummary(opcYYYMM, "2");
+
+    String csvFileName = "BP222OT2_T" + opcDate + ".csv";
+    String csvFileAbsolutePath = csvFilePath + csvFileName;
+    List<String> header01 = Arrays.asList("營運處", "群別", "會計科目", "出帳年月", "檔上欠費金額");
+
+    try {
+      // 建立 CsvGenerator 物件
+      CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 5, ",");
+
+      csvGenerator.writeData(0, header01);
+      BigDecimal totalSumBillItemAmt = BigDecimal.ZERO;
+
+      for (RptBP222OTSummary summary : rptBP222OTSummaries) {
+        List<String> dataRow = new ArrayList<>();
+        dataRow.add(summary.getBillOffBelong());
+        dataRow.add(summary.getBuGroupMark());
+        dataRow.add(summary.getAccItem());
+        dataRow.add(summary.getBillMonth());
+        BigDecimal sumBillItemAmt = summary.getSumBillItemAmt();
+        dataRow.add(StringUtils.formatNumberWithCommas(sumBillItemAmt));
+
+        totalSumBillItemAmt = totalSumBillItemAmt.add(sumBillItemAmt);
+        csvGenerator.writeData(0, dataRow);
+      }
+
+      // 儲存 CSV 檔案
+      csvGenerator.save();
+
+      dDataList.add(dData.builder()
+          .rptFileName(csvFileName)
+          .rptTimes("3")
+          .billMonth(rocYYYMM)
+          .rptDate(opcDate)
+          .rptFileCount(rptBP222OTSummaries.size())
+          .rptFileAmt(totalSumBillItemAmt)
+          .rptSecretMark("N")
+          .build());
+    } catch (Exception e) {
+      // 處理例外情況
+      log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
+      errorCount++;
+    }
+
+    String csvOffFileNameTemplate = "BP222OT2_%s_T" + opcDate + ".csv";
+
+    // 獲取所有不同的 billOffBelong
+    Set<String> distinctBillOffBelongs = rptBP222OTSummaries.stream()
+        .map(RptBP222OTSummary::getBillOffBelong)
+        .collect(Collectors.toSet());
+
+    // 針對每個 billOffBelong 進行處理
+    for (String billOffBelong : distinctBillOffBelongs) {
+      try {
+        // 過濾出當前 billOffBelong 的 summary
+        List<RptBP222OTSummary> summariesForBillOff = rptBP222OTSummaries.stream()
+            .filter(summary -> billOffBelong.equals(summary.getBillOffBelong()))
+            .collect(Collectors.toList());
+
+        String csvOffFileName = String.format(csvOffFileNameTemplate, billOffBelong);
+        String csvOffFileAbsolutePathWithBelong = csvFilePath + csvOffFileName;
+        CsvGenerator csvGeneratorWithBelong = new CsvGenerator(csvOffFileAbsolutePathWithBelong, 5, ",");
+        csvGeneratorWithBelong.writeData(0, header01);
+
+        BigDecimal totalSumBillItemAmt = BigDecimal.ZERO;
+
+        for (RptBP222OTSummary summary : summariesForBillOff) {
+          List<String> dataRow = new ArrayList<>();
+          dataRow.add(summary.getBillOffBelong());
+          dataRow.add(summary.getBuGroupMark());
+          dataRow.add(summary.getAccItem());
+          dataRow.add(summary.getBillMonth());
+          BigDecimal sumBillItemAmt = summary.getSumBillItemAmt();
+          dataRow.add(StringUtils.formatNumberWithCommas(sumBillItemAmt));
+
+          totalSumBillItemAmt = totalSumBillItemAmt.add(sumBillItemAmt);
+          csvGeneratorWithBelong.writeData(0, dataRow);
+        }
+
+        // 儲存 CSV 檔案
+        csvGeneratorWithBelong.save();
+
+        dDataList.add(dData.builder()
+            .rptFileName(csvOffFileNameTemplate)
+            .rptTimes("3")
+            .billMonth(rocYYYMM)
+            .rptDate(opcDate)
+            .rptFileCount(summariesForBillOff.size())
+            .rptFileAmt(totalSumBillItemAmt)
+            .rptSecretMark("N")
+            .build());
+
+      } catch (Exception e) {
+        // 處理例外情況
+        log.error("Error writing CSV file ", e);
+        errorCount++;
+      }
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BP22TOT")
+  public Result batchBP22TOTRpt(BatchSimpleRptInStr input) throws Exception {
+    String rptCode = "BP22TOT";
+    String isRerun = input.getIsRerun();
+    String jobId = input.getJobId();
+    String opcDate = input.getOpcDate();
+    String rocDate = DateUtils.convertToRocDate(opcDate);
+    String opcYYYMM = input.getOpcYearMonth();
+    String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
+    Integer errorCount = 0;
+
+    List<dData> dDataList = new ArrayList<>();
+
+    List<RptBP22TOTSummary> rptBP22TOTSummaries = rptAccountSummaryMapper.selectBP22TOTSummary(opcYYYMM);
+
+    String csvFileName = "BP22TOT_T" + opcDate + ".csv";
+    String csvFileAbsolutePath = csvFilePath + csvFileName;
+
+    try {
+      // 建立 CsvGenerator 物件
+      CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 5, ",");
+
+      List<String> header01 = Arrays.asList("出帳年月", "營運處", "會計科目", "細項", "檔上欠費金額");
+      csvGenerator.writeData(0, header01);
+      BigDecimal totalSumBillItemAmt = BigDecimal.ZERO;
+
+      for (RptBP22TOTSummary summary : rptBP22TOTSummaries) {
+        List<String> dataRow = new ArrayList<>();
+        dataRow.add(summary.getBillMonth());
+        dataRow.add(summary.getBillOffBelong());
+        dataRow.add(StringUtils.formatStringForCSV(summary.getAccItem1()));
+        dataRow.add(StringUtils.formatStringForCSV(summary.getAccItem2()));
+        BigDecimal sumBillItemAmt = summary.getSumBillItemAmt();
+        dataRow.add(StringUtils.formatNumberWithCommas(sumBillItemAmt));
+
+        totalSumBillItemAmt = totalSumBillItemAmt.add(sumBillItemAmt);
+        csvGenerator.writeData(0, dataRow);
+      }
+
+      // 儲存 CSV 檔案
+      csvGenerator.save();
+
+      dDataList.add(dData.builder()
+          .rptFileName(csvFileName)
+          .rptTimes("3")
+          .billMonth(rocYYYMM)
+          .rptDate(opcDate)
+          .rptFileCount(rptBP22TOTSummaries.size())
+          .rptFileAmt(totalSumBillItemAmt)
+          .rptSecretMark("N")
+          .build());
+    } catch (Exception e) {
+      // 處理例外情況
+      log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
+      errorCount++;
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BPGNERP")
+  public Result batchBPGNERPRpt(BatchSimpleRptInStr input) throws Exception {
+    String rptCode = "BPGNERP";
+    String isRerun = input.getIsRerun();
+    String jobId = input.getJobId();
+    String type3 = input.getType3();
+    String opcDate = input.getOpcDate();
+    String rocDate = DateUtils.convertToRocDate(opcDate);
+    String opcYYYMM = input.getOpcYearMonth();
+    String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
+    Integer errorCount = 0;
+    String mask = "Mask";
+
+    List<dData> dDataList = new ArrayList<>();
+
+    List<RptBPGNERPSummary> rptBPGNERPSummaries = rptAccountSummaryMapper.selectBPGNERPSummary(type3);
+
+    String csvFileName = "BPGNERP_T" + opcDate + ".csv";
+    String csvFileAbsolutePath = csvFilePath + csvFileName;
+
+    String csvFileMaskName = "BPGNERP_T" + opcDate + "_" + mask + ".csv";
+    String csvFileMaskAbsolutePath = csvFilePath + csvFileName;
+
+    try {
+      // 建立 CsvGenerator 物件
+      CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 5, ",");
+
+      List<String> header01 = Arrays.asList("出帳設備號碼", "客戶名稱", "出帳證號", "出帳年月", "未繳金額");
+      csvGenerator.writeData(0, header01);
+
+      int fileCount = 0;
+      for (RptBPGNERPSummary summary : rptBPGNERPSummaries) {
+        QueryAllNameAddrOfBillHistoryOutput queryOutput = queryBillHistory(summary, rocDate);
+        if (queryOutput != null) {
+          for (ListItem item : queryOutput.getListItems()) {
+            fileCount++;
+            List<String> dataRow = new ArrayList<>();
+            dataRow.add(queryOutput.getEquipmentNumber());
+            dataRow.add(item.getBillName());
+            dataRow.add(item.getBillCertificateNumber());
+            dataRow.add(item.getBillMonth());
+            dataRow.add(StringUtils.formatNumberWithCommas(summary.getBillAmt()));
+            csvGenerator.writeData(0, dataRow);
+          }
+        }
+      }
+
+      // 儲存 CSV 檔案
+      csvGenerator.save();
+
+      dDataList.add(dData.builder()
+          .rptFileName(csvFileName)
+          .rptTimes("3")
+          .billMonth(rocYYYMM)
+          .rptDate(opcDate)
+          .rptFileCount(fileCount)
+          .build());
+    } catch (Exception e) {
+      // 處理例外情況
+      log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
+      errorCount++;
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  private QueryAllNameAddrOfBillHistoryOutput queryBillHistory(RptBPGNERPSummary summary, String rocDate) {
+    String[] companyDivisions = { "N", "C", "S", "A" };
+    QueryAllNameAddrOfBillHistoryOutput queryOutput = null;
+
+    for (String division : companyDivisions) {
+      QueryAllNameAddrOfBillHistoryInput queryInput = new QueryAllNameAddrOfBillHistoryInput();
+      queryInput.setEmployeeId("SYSTEM");
+      queryInput.setCompanyDivision(division);
+      queryInput.setInstitutionCode(summary.getBillOff());
+      queryInput.setDeviceNumber(summary.getBillTel());
+      queryInput.setBillType("");
+      queryInput.setBillingMonthStart(summary.getBillMonth());
+      queryInput.setBillingMonthEnd(rocDate.substring(0, 5));
+      queryInput.setBillingCertificateNumber(summary.getBillIdno());
+      queryInput.setRemittanceNumber("");
+      queryInput.setSystemType("CCBS    ");
+      try {
+        String systemIP = java.net.InetAddress.getLocalHost().getHostAddress();
+        queryInput.setLoginIP(systemIP);
+      } catch (UnknownHostException e) {
+        // 處理異常，例如記錄錯誤或設置默認IP
+        queryInput.setLoginIP(""); // 設置為本地主機IP作為默認值
+        log.error("Error obtaining local host address", e);
+      }
+      String currentDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+      String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmmss"));
+      queryInput.setLoginDate(currentDate);
+      queryInput.setLoginTime(currentTime);
+
+      queryOutput = webServiceClient.queryAllNameAddrOfBillHistory(queryInput);
+
+      if (queryOutput != null && queryOutput.getStatus() != null && queryOutput.getStatus() == "0") {
+        // 如果 status = 0，表示成功有資料，退出循環
+        break;
+      } else {
+        // 如果無資料，繼續嘗試下一個 division
+        continue;
+      }
+    }
+
+    return queryOutput;
   }
 }
