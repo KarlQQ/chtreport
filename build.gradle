@@ -27,6 +27,7 @@ repositories {
 
 // 定義專案所需的相依性
 dependencies {
+
     // Spring Boot Web 起始器，提供建立 Web 應用程式所需的相依性
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
@@ -63,11 +64,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     // Apache HttpClient 5，版本為 5.1，用於發送 HTTP 請求
-    implementation 'org.apache.httpcomponents.client5:httpclient5:5.1'
+    //implementation 'org.apache.httpcomponents.client5:httpclient5:5.1'
+    //implementation 'org.apache.httpcomponents.core5:httpcore5:5.1'
 
     // Spring Boot 測試起始器，提供測試所需的相依性
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
+
+
 
 // 設定 Java 編譯任務的字元編碼為 UTF-8
 tasks.withType(JavaCompile) {

@@ -41,6 +41,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 
 
@@ -56,11 +57,11 @@ public class Comm01ServiceImpl implements Comm01Service {
   @Autowired private CommOfficeService commOfficeService;
   @Autowired private RestTemplateConfig restTemplateConfig;
 
-  private final RestTemplate restTemplate;
+  private final RestClient restClient;
 
   @Autowired
-  public Comm01ServiceImpl(RestTemplate restTemplate) {
-      this.restTemplate = restTemplate;
+  public Comm01ServiceImpl(RestClient restClient) {
+      this.restClient = restClient;
   }
 
   //        RQBP002_以證號辨別是否為自然人
@@ -347,54 +348,42 @@ public class Comm01ServiceImpl implements Comm01Service {
 
   @Override
   public UserInfoQueryOut COMM001_0005(UserInfoQueryIn userInfoQueryIn) {
-    UserInfoQueryOut result = null;
     try {
-
-      // Define the URL of the external API
       String url = userInfoApiUrl;
-      log.debug("userInfoApiUrl: " + userInfoApiUrl);
+      log.debug("UserInfo API URL: " + url);
+
       UserInfoQueryApiIn userInfoQueryApiIn = new UserInfoQueryApiIn();
       userInfoQueryApiIn.setSYSTEM_ID(userInfoQueryIn.getSystemId());
+      log.debug("SYSTEM_ID: " + userInfoQueryIn.getSystemId());
+
       userInfoQueryApiIn.setEMP_ID(
           userInfoQueryIn.getEmpId().substring(userInfoQueryIn.getEmpId().length() - 6));
+      log.debug("EMP_ID: " + userInfoQueryApiIn.getEMP_ID());
+
       userInfoQueryApiIn.setDATETIME(userInfoQueryIn.getDateTime() + ".000Z");
+      log.debug("DATETIME: " + userInfoQueryApiIn.getDATETIME());
 
-      log.debug("userInfoQueryIn.getSystemId()" + userInfoQueryIn.getSystemId());
-      log.debug("userInfoQueryIn.getEmpId()" + userInfoQueryIn.getEmpId());
-      log.debug("userInfoQueryIn.getDateTime()" + userInfoQueryIn.getDateTime());
-
-      ObjectMapper objectMapper = new ObjectMapper();
-      String requestBodyJsonString = objectMapper.writeValueAsString(userInfoQueryApiIn);
+      String requestBodyJsonString = new ObjectMapper().writeValueAsString(userInfoQueryApiIn);
       requestBodyJsonString = requestBodyJsonString.toUpperCase();
-      log.debug("requestBodyJsonString: " + requestBodyJsonString);
-      // Create HttpHeaders and set the Authorization header
-      HttpHeaders headers = new HttpHeaders();
-      String AuthorizationValue = authValEncrypt(requestBodyJsonString);
-      log.debug("AuthorizationValue: " + AuthorizationValue);
-      headers.set("Authorization", AuthorizationValue);
-      headers.set("Content-Type", "application/json");
+      log.debug("Request Body JSON String: " + requestBodyJsonString);
 
-      // Create the request body (if needed)
-      String requestBody = requestBodyJsonString;
+      String authorizationValue = authValEncrypt(requestBodyJsonString);
+      log.debug("Authorization Value: " + authorizationValue);
 
-      // Create an HttpEntity with headers and body
-      HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+      ResponseEntity<UserInfoQueryOut> response = restClient.post()
+          .uri(url)
+          .header("Authorization", authorizationValue)
+          .header("Content-Type", "application/json")
+          .body(userInfoQueryApiIn)
+          .retrieve()
+          .toEntity(UserInfoQueryOut.class);
 
-      // Make the POST request
-      log.debug("before post api request, requestEntity: ", requestEntity);
-      ResponseEntity<UserInfoQueryOut> response =
-          restTemplate.exchange(url, HttpMethod.POST, requestEntity, UserInfoQueryOut.class);
-      log.debug("after post api request, response: ", response);
-      log.debug("after post api request, response headers: " + response.getHeaders());
-      log.debug(
-          "after post api request, response statusCodeValue: " + response.getStatusCode().value());
-      log.debug("after post api request, response Status Code: " + response.getStatusCode());
-      log.debug("after post api request, response Body: " + response.getBody());
+      log.debug("Response: " + response);
 
       return response.getBody();
 
     } catch (Exception e) {
-      log.error("get user info ", e);
+      log.error("Exception occurred in COMM001_0005: ", e);
       return null;
     }
   }
