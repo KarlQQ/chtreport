@@ -500,7 +500,7 @@ public class RptController {
               OfficeInfoQueryIn.builder().officeCode(billOffId).transType("A").build());
           return RptCategoryOut.builder()
               .name("0".equals(comm01_0003.getResultStatus())
-                      ? comm01_0003.getResultOfficeCN().trim()
+                      ? billOffId.concat(" ").concat(comm01_0003.getResultOfficeCN().trim())
                       : billOffId)
               .code(billOffId)
               .build();
