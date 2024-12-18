@@ -2924,7 +2924,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   @Override
   @RptLogExecution(rptCode = "BPOWE")
   public Result batchBPOWERpt(BatchSimpleRptInStrWithOpid input) throws Exception {
-    String rptCode = "BPOWE2";
+    String rptCode = "BPOWE";
     String isRerun = input.getIsRerun();
     String jobId = input.getJobId();
     String keepCnt = input.getKeepCnt();
