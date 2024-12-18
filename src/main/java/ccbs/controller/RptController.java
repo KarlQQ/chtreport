@@ -3,6 +3,7 @@ package ccbs.controller;
 import ccbs.dao.core.entity.RptList;
 import ccbs.model.batch.BatchArrearsInputStr;
 import ccbs.model.batch.BatchSimpleRptInStr;
+import ccbs.model.batch.BatchSimpleRptInStrWithOpid;
 import ccbs.model.batch.BatchSimpleRptInStrWithType;
 import ccbs.model.batch.RptFileZipEncryptSingleIn;
 import ccbs.model.batch.RptFileZipEncryptSingleOut;
@@ -638,6 +639,25 @@ public class RptController {
       return ResponseEntity.ok("SaaS ERP指定系列設備欠費清單產生成功");
     } catch (Exception e) {
       log.error("SaaS ERP指定系列設備欠費清單產生失敗", e);
+      return ResponseEntity.internalServerError().body(e.getMessage());
+    }
+  }
+
+  @Operation(summary = "產生已拆機欠費前[筆數]名清單[特定業務]統計表", tags = {"Reports"},
+  description = "產生已拆機欠費前[筆數]名清單[特定業務]統計表")
+  @PostMapping(value = "/batchBPOWE2WRpt", produces = "application/json;charset=UTF-8")
+  public ResponseEntity<String>
+  batchBPOWE2WRpt(@RequestBody BatchSimpleRptInStrWithOpid input) {
+    try {
+      ResponseEntity<String> response = ValidationUtils.validateBatchSimpleRptInStr(input);
+      if (response != null)
+        return response;
+
+      arrearsService.batchBPOWE2WRpt(input);
+      arrearsService.batchBPOWERpt(input);
+      return ResponseEntity.ok("已拆機欠費前[筆數]名清單[特定業務]統計表產生成功");
+    } catch (Exception e) {
+      log.error("已拆機欠費前[筆數]名清單[特定業務]統計表產生失敗", e);
       return ResponseEntity.internalServerError().body(e.getMessage());
     }
   }

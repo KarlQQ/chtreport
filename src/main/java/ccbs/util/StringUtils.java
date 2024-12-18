@@ -10,7 +10,7 @@ public class StringUtils {
   }
 
   public static String formatStringForCSV(String string) {
-    return "\"" + string + "\"";
-}
+    return "\"" + (string != null ? string : "") + "\"";
+  }
 
 }

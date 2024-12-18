@@ -11,6 +11,8 @@ import ccbs.dao.core.entity.RptBP2230D6Summary;
 import ccbs.dao.core.entity.RptBP2240D1Summary;
 import ccbs.dao.core.entity.RptBP22TOTSummary;
 import ccbs.dao.core.entity.RptBPGNERPSummary;
+import ccbs.dao.core.entity.RptBPOWE2WSummary;
+import ccbs.dao.core.entity.RptBPOWESummary;
 import ccbs.dao.core.entity.RptBP222OTSummary;
 import ccbs.dao.core.constants.DateTypeConstants;
 
@@ -43,6 +45,19 @@ public interface RptAccountSummaryMapper {
   @SelectProvider(type = SqlProvider.class, method = "selectBPGNERPSummary")
   List<RptBPGNERPSummary> selectBPGNERPSummary(@Param("type3") String type3);
   
+  @SelectProvider(type = SqlProvider.class, method = "selectBPOWE2WSummary")
+  List<RptBPOWE2WSummary> selectBPOWE2WSummary(
+    @Param("currentDate") String currentDate,
+    @Param("keepCnt") String keepCnt, 
+    @Param("inputOPID") String inputOPID, 
+    @Param("inputSTATUS") String inputSTATUS);
+
+  @SelectProvider(type = SqlProvider.class, method = "selectBPOWESummary")
+  List<RptBPOWESummary> selectBPOWESummary(
+    @Param("currentDate") String currentDate,
+    @Param("keepCnt") String keepCnt, 
+    @Param("inputOPID") String inputOPID, 
+    @Param("inputSTATUS") String inputSTATUS);
 
   class SqlProvider {
     public String selectRptAccountSummary(@Param("currentDate") String currentDate, @Param("offType") String offType,
@@ -490,6 +505,91 @@ public interface RptAccountSummaryMapper {
       sql.append("    BILL_TEL LIKE #{type3} || '%' \n");
       return sql.toString();
     }
+
+    public String selectBPOWE2WSummary(@Param("currentDate") String currentDate,
+    @Param("keepCnt") String keepCnt, 
+    @Param("inputOPID") String inputOPID, 
+    @Param("inputSTATUS") String inputSTATUS) {
+      StringBuilder sql = new StringBuilder();
+      
+      sql.append("WITH RankedData AS ( \n");
+      sql.append("    SELECT \n");
+      sql.append("        BILL_TEL, \n");
+      sql.append("        SUM(BILL_AMT) AS TOTAL_BILL_AMT, \n");
+      sql.append("        ROW_NUMBER() OVER (ORDER BY SUM(BILL_AMT) DESC) AS RANKING \n");
+      sql.append("    FROM RPT_BILL_MAIN \n");
+      sql.append("    WHERE 0=0 \n");
+      if (inputOPID != null && !inputOPID.isEmpty()) {
+          sql.append("    AND BILL_OPID = #{inputOPID} \n");
+      }
+      if (inputSTATUS != null && !inputSTATUS.isEmpty()) {
+          sql.append("    AND TEL_STATUS = #{inputSTATUS} \n");
+      }
+      sql.append("    AND TO_NUMBER(SUBSTR(BILL_MONTH, 1, 5)) <> TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), 0), 'YYYYMM')) - 191100 \n");
+      sql.append("    GROUP BY BILL_TEL \n");
+      sql.append(") \n");
+      sql.append("SELECT \n");
+      sql.append("    RD.RANKING AS ranking, \n");
+      sql.append("    RBM.BILL_OFF_BELONG AS billOffBelong, \n");
+      sql.append("    RBM.BILL_OFF AS billOff, \n");
+      sql.append("    RD.BILL_TEL AS billTel, \n");
+      sql.append("    RBM.BILL_IDNO AS billIdno, \n");
+      sql.append("    RBM.DR_DATE AS drDate, \n");
+      sql.append("    RD.TOTAL_BILL_AMT AS totalBillAmt \n");
+      sql.append("FROM RankedData RD \n");
+      sql.append("LEFT JOIN RPT_BILL_MAIN RBM \n");
+      sql.append("    ON RD.BILL_TEL = RBM.BILL_TEL \n");
+      if (keepCnt != null) {
+          sql.append("WHERE RD.RANKING <= #{keepCnt} \n");
+      }
+      sql.append("ORDER BY RD.RANKING \n");
+
+      return sql.toString();
+    }
+
+    public String selectBPOWESummary(@Param("currentDate") String currentDate,
+    @Param("keepCnt") String keepCnt, 
+    @Param("inputOPID") String inputOPID, 
+    @Param("inputSTATUS") String inputSTATUS) {
+      StringBuilder sql = new StringBuilder();
+      
+      sql.append("WITH RankedData AS ( \n");
+      sql.append("    SELECT \n");
+      sql.append("        BILL_TEL, \n");
+      sql.append("        SUM(BILL_AMT) AS TOTAL_BILL_AMT, \n");
+      sql.append("        ROW_NUMBER() OVER (ORDER BY SUM(BILL_AMT) DESC) AS RANKING \n");
+      sql.append("    FROM RPT_BILL_MAIN \n");
+      sql.append("    WHERE 0=0 \n");
+      if (inputOPID != null && !inputOPID.isEmpty()) {
+          sql.append("    AND BILL_OPID = #{inputOPID} \n");
+      }
+      if (inputSTATUS != null && !inputSTATUS.isEmpty()) {
+          sql.append("    AND TEL_STATUS = #{inputSTATUS} \n");
+      }
+      sql.append("    AND TO_NUMBER(SUBSTR(BILL_MONTH, 1, 5)) <> TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), 0), 'YYYYMM')) - 191100 \n");
+      sql.append("    GROUP BY BILL_TEL \n");
+      sql.append(") \n");
+      sql.append("SELECT \n");
+      sql.append("    RD.RANKING AS ranking, \n");
+      sql.append("    RBM.BILL_OFF_BELONG AS billOffBelong, \n");
+      sql.append("    RBM.BILL_OFF AS billOff, \n");
+      sql.append("    RD.BILL_TEL AS billTel, \n");
+      sql.append("    RBM.BILL_IDNO AS billIdno, \n");
+      sql.append("    RBM.BILL_MONTH AS billMonth, \n");
+      sql.append("    RBM.PAYTYPE AS payType, \n");
+      sql.append("    RBM.DR_DATE AS drDate, \n");
+      sql.append("    RD.TOTAL_BILL_AMT AS totalBillAmt \n");
+      sql.append("FROM RPT_BILL_MAIN RBM \n");
+      sql.append("LEFT JOIN RankedData RD \n");
+      sql.append("    ON RD.BILL_TEL = RBM.BILL_TEL \n");
+      if (keepCnt != null) {
+          sql.append("WHERE RD.RANKING <= #{keepCnt} \n");
+      }
+      sql.append("ORDER BY RD.RANKING \n");
+
+      return sql.toString();
+    }
+    
   }
 
 }
