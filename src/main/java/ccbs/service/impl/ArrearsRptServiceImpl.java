@@ -2959,7 +2959,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         dataRow.add(StringUtils.formatStringForCSV(summary.getBillTel()));
         dataRow.add(StringUtils.formatStringForCSV(summary.getBillIdno()));
         dataRow.add(StringUtils.formatStringForCSV(summary.getBillMonth()));
-        dataRow.add(StringUtils.formatStringForCSV(summary.getPayType()));
+        dataRow.add(StringUtils.formatStringForCSV(summary.getBillId()));
         dataRow.add(StringUtils.formatStringForCSV(summary.getDrDate()));
         dataRow.add(StringUtils.formatNumberWithCommas(summary.getTotalBillAmt()));
 

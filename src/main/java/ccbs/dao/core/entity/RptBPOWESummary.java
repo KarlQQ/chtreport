@@ -17,7 +17,7 @@ public class RptBPOWESummary {
   private String billTel;
   private String billIdno;
   private String billMonth;
-  private String payType;
+  private String billId;
   private String drDate;
   private BigDecimal totalBillAmt;
 

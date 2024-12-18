@@ -576,7 +576,7 @@ public interface RptAccountSummaryMapper {
       sql.append("    RD.BILL_TEL AS billTel, \n");
       sql.append("    RBM.BILL_IDNO AS billIdno, \n");
       sql.append("    RBM.BILL_MONTH AS billMonth, \n");
-      sql.append("    RBM.PAYTYPE AS payType, \n");
+      sql.append("    RBM.BILL_ID AS billId, \n");
       sql.append("    RBM.DR_DATE AS drDate, \n");
       sql.append("    RD.TOTAL_BILL_AMT AS totalBillAmt \n");
       sql.append("FROM RPT_BILL_MAIN RBM \n");
