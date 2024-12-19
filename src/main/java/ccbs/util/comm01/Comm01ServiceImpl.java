@@ -206,7 +206,7 @@ public class Comm01ServiceImpl implements Comm01Service {
     int charSum = char1 * 1 + char2 * 8 + char3 * 7 + char4 * 6 + char5 * 5 + char6 * 4 + char7 * 3
         + char8 * 2 + char9 * 1;
 
-    int finalComplement = 10 - charSum % 10;
+    int finalComplement = (charSum % 10 == 0) ? 0 : 10 - charSum % 10;
 
     return finalComplement;
   }
