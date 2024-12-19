@@ -2645,7 +2645,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         csvGeneratorWithBelong.save();
 
         dDataList.add(dData.builder()
-            .rptFileName(csvOffFileNameTemplate)
+            .rptFileName(csvOffFileName)
             .rptTimes("3")
             .billMonth(rocYYYMM)
             .rptDate(opcDate)
