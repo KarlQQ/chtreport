@@ -14,6 +14,7 @@ import ccbs.dao.core.entity.RptBP2230D6Summary;
 import ccbs.dao.core.entity.RptBP2240D1Summary;
 import ccbs.dao.core.entity.RptBP22TOTSummary;
 import ccbs.dao.core.entity.RptBPGNERPSummary;
+import ccbs.dao.core.entity.RptBPGUSUBSummary;
 import ccbs.dao.core.entity.RptBPOWE2WSummary;
 import ccbs.dao.core.entity.RptBPOWESummary;
 import ccbs.dao.core.entity.RptBPZ10Summary;
@@ -121,6 +122,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   @Value("${ccbs.inputFilePath}") private String inputFilePath;
   @Value("${ccbs.pdfFilePath}") private String pdfFilePath;
   @Value("${ccbs.csvFilePath}") private String csvFilePath;
+  @Value("${ccbs.txtFilePath}") private String txtFilePath;
   // @Value("${ccbs.fontPath}")
   // private String fontPath;
   @Value("${ccbs.watermarkFilePath}") private String watermarkFilePath;
@@ -320,6 +322,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     log.debug("inputFilePath is : " + inputFilePath);
     log.debug("pdfFilePath is : " + pdfFilePath);
     log.debug("csvFilePath is : " + csvFilePath);
+    log.debug("txtFilePath is : " + txtFilePath);
     log.debug("watermarkFilePath is : " + watermarkFilePath);
     log.debug("zipFilePath is : " + zipFilePath);
 
@@ -353,6 +356,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   private void readSingleFileAndGenRpts(Path entry, String rptCode, BatchArrearsInputStr input) {
     try {
       String rptLogsId = null;
+      String inputType = input.getInputType();
 
       // 2. 讀【查欠證號檔】
       String fileName = entry.getFileName().toString();
@@ -428,6 +432,10 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       log.debug("generateRpts end, "
           + " time: " + getCurrentDateTime());
 
+      if (inputType.equals("2")) {
+        generateTxt(input, arrearsInputStrs, genMaskReportFlg, naturalIncludeFlg);
+      }
+
       // generate mask report when genMaskReportFlg is true
       if (genMaskReportFlg) {
         // mask report rows
@@ -454,6 +462,11 @@ public class ArrearsRptServiceImpl implements ArrearsService {
             naturalIncludeFlg, bpgusub_reportRowsFormCsvOut_mask);
         log.debug("generateRpts masked end, "
             + " time: " + getCurrentDateTime());
+
+
+        if (inputType.equals("2")) {
+          generateTxt(input, arrearsInputStrs, genMaskReportFlg, naturalIncludeFlg);
+        }
       }
 
       log.debug("read arrears file end, file name: " + fileName + " time: " + getCurrentDateTime());
@@ -784,6 +797,82 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       }
       return result;
     } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+    return null;
+  }
+
+  private dData generateTxt(BatchArrearsInputStr input, List<SingleArrearsInputStr> arrearsInputStrs,
+    boolean genSecretReportFlg, boolean naturalIncludeFlg) {
+    try {
+        
+      String isRerun = input.getIsRerun();
+      String jobId = input.getJobid();
+      String inputType = input.getInputType();
+      String inputItem = input.getInputItem();
+      String opcDate = input.getOpcDate();
+      String rocDate = DateUtils.convertToRocDate(opcDate);
+
+      String txtFileName;
+      if (genSecretReportFlg) {
+        txtFileName = "BPGUSUB_BPOB_T" + opcDate + "_MASK.TXT";
+      } else {
+        txtFileName = "BPGUSUB_BPOB_T" + opcDate + ".TXT";
+      }
+
+      String txtFileAbsolutePath = txtFilePath + txtFileName;
+
+      StringBuilder billIdnoBuilder = new StringBuilder();
+      for (int i = 0; i < arrearsInputStrs.size(); i++) {
+        String billIdno = arrearsInputStrs.get(i).getBillIdno().trim();
+        billIdnoBuilder.append(billIdno);
+        if (i < arrearsInputStrs.size() - 1) {
+          billIdnoBuilder.append(",");
+        }
+      }
+      String billIdnoStr = billIdnoBuilder.toString();
+
+      if (billIdnoStr == null || billIdnoStr.isEmpty()) {
+        return null;
+      }
+
+      TxtGenerator txtGenerator = new TxtGenerator(txtFileAbsolutePath);
+      
+      List<RptBPGUSUBSummary> rptBPGUSUBSummaries = rptAccountSummaryMapper.selectBPGUSUBSummary(billIdnoStr, inputItem);
+      for (RptBPGUSUBSummary summary : rptBPGUSUBSummaries) {
+        String billIdno = summary.getBillIdno() != null ? (String) summary.getBillIdno() : "";
+        String billMonth = summary.getBillMonth() != null ? (String) summary.getBillMonth() : "";
+        String billId = summary.getBillId() != null ? (String) summary.getBillId() : "";
+        String billCycle = summary.getBillCycle() != null ? (String) summary.getBillCycle() : "";
+        String dueId = summary.getDueId() != null ? (String) summary.getDueId() : "";
+        String billOff = summary.getBillOff() != null ? (String) summary.getBillOff() : "";
+        String billTel = summary.getBillTel() != null ? (String) summary.getBillTel() : "";
+        String totalAmt = StringUtils.formatNumberWithCommasWithoutQuotes(summary.getTotalAmt());
+
+        txtGenerator.writeValue(1, 10, billIdno);
+        txtGenerator.writeValue(11, 15, billMonth);
+        txtGenerator.writeValue(16, 17, billId);
+        txtGenerator.writeValue(18, 18, billCycle);
+        txtGenerator.writeValue(19, 19, dueId);
+        txtGenerator.writeValue(20, 23, billOff);
+        txtGenerator.writeValue(24, 35, billTel);
+        txtGenerator.writeValue(36, 45, totalAmt);
+        txtGenerator.nextRow();
+      }
+
+      txtGenerator.save();
+
+      dData result = new dData();
+      result.setRptFileName(txtFileName);
+      result.setRptFileCount(rptBPGUSUBSummaries.size());
+      if (naturalIncludeFlg && !genSecretReportFlg) {
+        result.setRptSecretMark("Y");
+      } else {
+        result.setRptSecretMark("N");
+      }
+      return result;
+    } catch (Exception e) {
       e.printStackTrace();
     }
 
@@ -2706,8 +2795,13 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         List<String> dataRow = new ArrayList<>();
         dataRow.add(summary.getBillMonth());
         dataRow.add(summary.getBillOffBelong());
-        dataRow.add(StringUtils.formatStringForCSV(summary.getAccItem1()));
-        dataRow.add(StringUtils.formatStringForCSV(summary.getAccItem2()));
+        if ("OTHER".equals(summary.getAccItem2())) {
+          dataRow.add(StringUtils.formatStringForCSV(summary.getAccItem2()));
+          dataRow.add(StringUtils.formatStringForCSV(summary.getAccItem1()));
+        } else {
+          dataRow.add(StringUtils.formatStringForCSV(summary.getAccItem1()));
+          dataRow.add(StringUtils.formatStringForCSV(summary.getAccItem2()));
+        }
         BigDecimal sumBillItemAmt = summary.getSumBillItemAmt();
         dataRow.add(StringUtils.formatNumberWithCommas(sumBillItemAmt));
 

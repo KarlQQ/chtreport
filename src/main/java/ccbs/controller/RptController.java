@@ -193,7 +193,7 @@ public class RptController {
   // "isRerun": "Y"
   // }
   @Operation(summary = "批次證號查欠", tags = {"Reports"}, description = "批次呼叫單筆證號查欠")
-  @PostMapping("/batchIdNoArrearsQuery")
+  @PostMapping(value="/batchIdNoArrearsQuery", produces = "application/json;charset=UTF-8")
   public String batchIdNoArrearsQuery(@RequestBody BatchArrearsInputStr input) {
     try {
       arrearsService.batchArrearsQuery(input);

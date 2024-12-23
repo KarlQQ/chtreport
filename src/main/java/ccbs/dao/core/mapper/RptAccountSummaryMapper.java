@@ -11,6 +11,7 @@ import ccbs.dao.core.entity.RptBP2230D6Summary;
 import ccbs.dao.core.entity.RptBP2240D1Summary;
 import ccbs.dao.core.entity.RptBP22TOTSummary;
 import ccbs.dao.core.entity.RptBPGNERPSummary;
+import ccbs.dao.core.entity.RptBPGUSUBSummary;
 import ccbs.dao.core.entity.RptBPOWE2WSummary;
 import ccbs.dao.core.entity.RptBPOWESummary;
 import ccbs.dao.core.entity.RptBPZ10Summary;
@@ -65,7 +66,10 @@ public interface RptAccountSummaryMapper {
     @Param("currentDate") String currentDate,
     @Param("itemType") String itemType);
 
-    
+  @SelectProvider(type = SqlProvider.class, method = "selectBPGUSUBSummary")
+  List<RptBPGUSUBSummary> selectBPGUSUBSummary(
+    @Param("billIdnoList") String billIdnoList,
+    @Param("itemType") String itemType);
 
   class SqlProvider {
     public String selectRptAccountSummary(@Param("currentDate") String currentDate, @Param("offType") String offType,
@@ -476,25 +480,73 @@ public interface RptAccountSummaryMapper {
       sql.append("    SELECT TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -16), 'YYYYMM') AS BILL_MONTH, 15 AS OVERDUE_MONTHS FROM dual UNION ALL \n");
       sql.append("    SELECT TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -19), 'YYYYMM') AS BILL_MONTH, 18 AS OVERDUE_MONTHS FROM dual UNION ALL \n");
       sql.append("    SELECT TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -25), 'YYYYMM') AS BILL_MONTH, 24 AS OVERDUE_MONTHS FROM dual \n");
+      sql.append("), \n");
+      sql.append("valid_acc_items AS ( \n");
+      sql.append("    SELECT '1144-11N' AS ACC_ITEM FROM dual UNION ALL SELECT '1144-11S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-11N' FROM dual UNION ALL SELECT '1812-11S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-21N' FROM dual UNION ALL SELECT '1144-21S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-21N' FROM dual UNION ALL SELECT '1812-21S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-31N' FROM dual UNION ALL SELECT '1144-31S' FROM dual UNION ALL SELECT '1144-31I' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-31N' FROM dual UNION ALL SELECT '1812-31S' FROM dual UNION ALL SELECT '1812-31I' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-42N' FROM dual UNION ALL SELECT '1144-42S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-42N' FROM dual UNION ALL SELECT '1812-42S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-45N' FROM dual UNION ALL SELECT '1144-45S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-45N' FROM dual UNION ALL SELECT '1812-45S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-46N' FROM dual UNION ALL SELECT '1144-46S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-46N' FROM dual UNION ALL SELECT '1812-46S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-61N' FROM dual UNION ALL SELECT '1144-61S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-61N' FROM dual UNION ALL SELECT '1812-61S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-62N' FROM dual UNION ALL SELECT '1144-62S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-62N' FROM dual UNION ALL SELECT '1812-62S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-63N' FROM dual UNION ALL SELECT '1144-63S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-63N' FROM dual UNION ALL SELECT '1812-63S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-16N' FROM dual UNION ALL SELECT '1144-16S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-16N' FROM dual UNION ALL SELECT '1812-16S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-71N' FROM dual UNION ALL SELECT '1144-71S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-71N' FROM dual UNION ALL SELECT '1812-71S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-81N' FROM dual UNION ALL SELECT '1144-81S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-81N' FROM dual UNION ALL SELECT '1812-81S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-82N' FROM dual UNION ALL SELECT '1144-82S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-82N' FROM dual UNION ALL SELECT '1812-82S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-83N' FROM dual UNION ALL SELECT '1144-83S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-83N' FROM dual UNION ALL SELECT '1812-83S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1144-90N' FROM dual UNION ALL SELECT '1144-90S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-90N' FROM dual UNION ALL SELECT '1812-90S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1178-69N' FROM dual UNION ALL SELECT '1178-69S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1178-73N' FROM dual UNION ALL SELECT '1178-73S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-69N' FROM dual UNION ALL SELECT '1812-69S' FROM dual UNION ALL \n");
+      sql.append("    SELECT '1812-73N' FROM dual UNION ALL SELECT '1812-73S' FROM dual \n");
+      sql.append("), \n");
+      sql.append("expanded_rpt_account AS ( \n");
+      sql.append("    SELECT \n");
+      sql.append("        r.*, \n");
+      sql.append("        CASE \n");
+      sql.append("            WHEN r.ACC_ITEM IN (SELECT ACC_ITEM FROM valid_acc_items) THEN r.ACC_ITEM \n");
+      sql.append("            ELSE 'OTHER' \n");
+      sql.append("        END AS accItemGroup \n");
+      sql.append("    FROM rpt_account r \n");
       sql.append(") \n");
       sql.append("SELECT \n");
       sql.append("    r.BILL_MONTH AS billMonth, \n");
       sql.append("    r.BILL_OFF_BELONG AS billOffBelong, \n");
-      sql.append("    SUBSTR(r.ACC_ITEM, 1, INSTR(r.ACC_ITEM, '-') - 1) AS accItem1, \n");
-      sql.append("    SUBSTR(r.ACC_ITEM, INSTR(r.ACC_ITEM, '-') + 1) AS accItem2, \n");
+      sql.append("    SUBSTR(r.accItemGroup, 1, INSTR(r.accItemGroup, '-') - 1) AS accItem1, \n");
+      sql.append("    SUBSTR(r.accItemGroup, INSTR(r.accItemGroup, '-') + 1) AS accItem2, \n");
       sql.append("    SUM(r.BILL_ITEM_AMT) AS sumBillItemAmt \n");
       sql.append("FROM \n");
-      sql.append("    rpt_account r \n");
+      sql.append("    expanded_rpt_account r \n");
       sql.append("JOIN \n");
       sql.append("    overdue_months o ON TO_CHAR(TO_NUMBER(SUBSTR(o.BILL_MONTH, 1, 4)) - 1911) || SUBSTR(o.BILL_MONTH, 5, 2) = r.BILL_MONTH \n");
+      sql.append("WHERE \n");
+      sql.append("    r.ACC_ITEM NOT LIKE '1813%' \n");
+      sql.append("    AND r.ACC_ITEM NOT LIKE '5609%' \n");
       sql.append("GROUP BY \n");
       sql.append("    r.BILL_OFF_BELONG, \n");
-      sql.append("    r.ACC_ITEM, \n");
+      sql.append("    r.accItemGroup, \n");
       sql.append("    r.BILL_MONTH \n");
       sql.append("ORDER BY \n");
       sql.append("    r.BILL_OFF_BELONG ASC, \n");
       sql.append("    r.BILL_MONTH ASC, \n");
-      sql.append("    r.ACC_ITEM ASC \n");
+      sql.append("    r.accItemGroup ASC \n");
       
       return sql.toString();
     }
@@ -538,18 +590,19 @@ public interface RptAccountSummaryMapper {
       sql.append(") \n");
       sql.append("SELECT \n");
       sql.append("    RD.RANKING AS ranking, \n");
-      sql.append("    RBM.BILL_OFF_BELONG AS billOffBelong, \n");
-      sql.append("    RBM.BILL_OFF AS billOff, \n");
-      sql.append("    RD.BILL_TEL AS billTel, \n");
-      sql.append("    RBM.BILL_IDNO AS billIdno, \n");
-      sql.append("    RBM.DR_DATE AS drDate, \n");
-      sql.append("    RD.TOTAL_BILL_AMT AS totalBillAmt \n");
+      sql.append("    MAX(RBM.BILL_OFF_BELONG) AS billOffBelong, \n");
+      sql.append("    MAX(RBM.BILL_OFF) AS billOff, \n");
+      sql.append("    MAX(RD.BILL_TEL) AS billTel, \n");
+      sql.append("    MAX(RBM.BILL_IDNO) AS billIdno, \n");
+      sql.append("    MAX(RBM.DR_DATE) AS drDate, \n");
+      sql.append("    MAX(RD.TOTAL_BILL_AMT) AS totalBillAmt \n");
       sql.append("FROM RankedData RD \n");
       sql.append("LEFT JOIN RPT_BILL_MAIN RBM \n");
       sql.append("    ON RD.BILL_TEL = RBM.BILL_TEL \n");
       if (keepCnt != null) {
           sql.append("WHERE RD.RANKING <= #{keepCnt} \n");
       }
+      sql.append("GROUP BY RD.RANKING \n");
       sql.append("ORDER BY RD.RANKING \n");
 
       return sql.toString();
@@ -586,7 +639,7 @@ public interface RptAccountSummaryMapper {
       sql.append("    RBM.BILL_MONTH AS billMonth, \n");
       sql.append("    RBM.BILL_ID AS billId, \n");
       sql.append("    RBM.DR_DATE AS drDate, \n");
-      sql.append("    RD.TOTAL_BILL_AMT AS totalBillAmt \n");
+      sql.append("    RBM.BILL_AMT AS totalBillAmt \n");
       sql.append("FROM RPT_BILL_MAIN RBM \n");
       sql.append("LEFT JOIN RankedData RD \n");
       sql.append("    ON RD.BILL_TEL = RBM.BILL_TEL \n");
@@ -641,6 +694,65 @@ public interface RptAccountSummaryMapper {
 
       return sql.toString();
     }
+
+    public String selectBPGUSUBSummary(@Param("billIdnoList") String billIdnoList,
+    @Param("itemType") String itemType) {
+      StringBuilder sql = new StringBuilder();
+      
+      sql.append("WITH BILL_IDNO_LIST AS ( \n");
+      sql.append("    SELECT TRIM(REGEXP_SUBSTR( \n");
+      sql.append("        #{billIdnoList}, '[^,]+', 1, LEVEL)) AS BILL_IDNO \n");
+      sql.append("    FROM DUAL \n");
+      sql.append("    CONNECT BY REGEXP_SUBSTR( \n");
+      sql.append("        #{billIdnoList}, '[^,]+', 1, LEVEL) IS NOT NULL \n");
+      sql.append("), \n");
+      sql.append("FILTERED_BILL_DETL AS ( \n");
+      sql.append("    SELECT \n");
+      sql.append("        rbd.BILL_MONTH, \n");
+      sql.append("        rbd.BILL_TEL, \n");
+      sql.append("        rbd.BILL_ITEM_CODE, \n");
+      sql.append("        rbd.BILL_ITEM_AMT \n");
+      sql.append("    FROM \n");
+      sql.append("        RPT_BILL_DETL rbd \n");
+      sql.append("    JOIN \n");
+      sql.append("        (SELECT * FROM RPT_ITEM_TYPE_DETL WHERE BILL_ITEM_TYPE = #{itemType}) ritd \n");
+      sql.append("    ON rbd.BILL_ITEM_CODE = ritd.BILL_ITEM_CODE \n");
+      sql.append("), \n");
+      sql.append("AGGREGATED_BILL_DETL AS ( \n");
+      sql.append("    SELECT \n");
+      sql.append("        fbd.BILL_MONTH, \n");
+      sql.append("        fbd.BILL_TEL, \n");
+      sql.append("        SUM(fbd.BILL_ITEM_AMT) AS TOTAL_AMT \n");
+      sql.append("    FROM \n");
+      sql.append("        FILTERED_BILL_DETL fbd \n");
+      sql.append("    GROUP BY \n");
+      sql.append("        fbd.BILL_MONTH, fbd.BILL_TEL \n");
+      sql.append(") \n");
+      sql.append("SELECT \n");
+      sql.append("    bil.BILL_IDNO AS billIdno, \n");
+      sql.append("    rbm.BILL_MONTH AS billMonth, \n");
+      sql.append("    rbm.BILL_ID AS billId, \n");
+      sql.append("    rbm.BILL_CYCLE AS billCycle, \n");
+      sql.append("    rbm.BILL_OFF AS billOff, \n");
+      sql.append("    rbm.BILL_TEL AS billTel, \n");
+      sql.append("    NVL(abd.TOTAL_AMT, 0) AS totalAmt, \n");
+      sql.append("    CASE \n");
+      sql.append("        WHEN rbm.BILL_TEL IS NULL THEN 'N' \n");
+      sql.append("        ELSE 'Y' \n");
+      sql.append("    END AS dueId \n");
+      sql.append("FROM \n");
+      sql.append("    BILL_IDNO_LIST bil \n");
+      sql.append("LEFT JOIN \n");
+      sql.append("    RPT_BILL_MAIN rbm \n");
+      sql.append("    ON bil.BILL_IDNO = TRIM(rbm.BILL_IDNO) \n");
+      sql.append("LEFT JOIN \n");
+      sql.append("    AGGREGATED_BILL_DETL abd \n");
+      sql.append("    ON rbm.BILL_MONTH = abd.BILL_MONTH \n");
+      sql.append("    AND rbm.BILL_TEL = abd.BILL_TEL \n");
+
+      return sql.toString();
+    }
   }
 
+  
 }
