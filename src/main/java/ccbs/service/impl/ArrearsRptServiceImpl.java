@@ -16,6 +16,7 @@ import ccbs.dao.core.entity.RptBP22TOTSummary;
 import ccbs.dao.core.entity.RptBPGNERPSummary;
 import ccbs.dao.core.entity.RptBPOWE2WSummary;
 import ccbs.dao.core.entity.RptBPOWESummary;
+import ccbs.dao.core.entity.RptBPZ10Summary;
 import ccbs.dao.core.entity.RptBP222OTSummary;
 import ccbs.dao.core.entity.RptBillMain;
 import ccbs.dao.core.mapper.BillRelsMapper;
@@ -31,6 +32,7 @@ import ccbs.model.batch.BP221D6_ReportRowForm;
 import ccbs.model.batch.BPGUSUB_ReportRowForm;
 import ccbs.model.batch.BatchArrearsInputStr;
 import ccbs.model.batch.BatchSimpleRptInStr;
+import ccbs.model.batch.BatchSimpleRptInStrWithItemType;
 import ccbs.model.batch.BatchSimpleRptInStrWithOpid;
 import ccbs.model.batch.BatchSimpleRptInStrWithType;
 import ccbs.model.batch.IdnoData;
@@ -48,6 +50,7 @@ import ccbs.model.online.OfficeInfoQueryOut;
 import ccbs.service.intf.ArrearsService;
 import ccbs.service.intf.Bp01Service.Result;
 import ccbs.util.CsvGenerator;
+import ccbs.util.TxtGenerator;
 import ccbs.util.DateUtils;
 import ccbs.util.NameMapping;
 import ccbs.util.StringUtils;
@@ -84,6 +87,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1047,7 +1051,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     /**
      * @descriptoin: 創建字體樣式
      * @param: fontSize  字體大小
-     * @param: fontColor 字體顏色
+     * @param: fontColor ��體顏色
      */
     public static com.itextpdf.text.Font createFont(
         int fontSize, int fontStyle, BaseColor fontColor) {
@@ -2647,6 +2651,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         dDataList.add(dData.builder()
             .rptFileName(csvOffFileName)
             .rptTimes("3")
+            .billOff(billOffBelong)
             .billMonth(rocYYYMM)
             .rptDate(opcDate)
             .rptFileCount(summariesForBillOff.size())
@@ -2981,6 +2986,241 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     } catch (Exception e) {
       // 處理例外情況
       log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
+      errorCount++;
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  @RptLogExecution(rptCode = "BPZ10")
+  public Result batchBPZ10Rpt(BatchSimpleRptInStrWithItemType input) throws Exception {
+    String rptCode = "BPZ10";
+    String isRerun = input.getIsRerun();
+    String jobId = input.getJobId();
+    String itemType = input.getItemType();
+    String opcDate = input.getOpcDate();
+    String rocDate = DateUtils.convertToRocDate(opcDate);
+    String opcYYYMM = input.getOpcYearMonth();
+    String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
+    Integer errorCount = 0;
+
+    List<dData> dDataList = new ArrayList<>();
+
+    List<RptBPZ10Summary> rptBPZ10Summaries = rptAccountSummaryMapper.selectBPZ10Summary(opcYYYMM, itemType);
+
+    String titleName = null;
+
+    Map<String, List<Map<String, Object>>> groupedData = new HashMap<>();
+
+    for (RptBPZ10Summary summary : rptBPZ10Summaries) {
+        String billOffBelong = summary.getBillOffBelong();
+        String uniqueKey = String.join("_",
+            summary.getBillOff(),
+            summary.getBillTel(),
+            summary.getBillSubOff(),
+            summary.getBillSubTel(),
+            summary.getBillMonth()
+        );
+
+        if (titleName == null) {
+            titleName = summary.getBillItemName();
+        }
+
+        // Initialize the list for each billOffBelong if not already present
+        groupedData.computeIfAbsent(billOffBelong, k -> new ArrayList<>());
+
+        // Check if the uniqueKey already exists in the list for this billOffBelong
+        boolean exists = false;
+        for (Map<String, Object> dataMap : groupedData.get(billOffBelong)) {
+            String existingKey = String.join("_",
+                (String) dataMap.get("billOff"),
+                (String) dataMap.get("billTel"),
+                (String) dataMap.get("billSubOff"),
+                (String) dataMap.get("billSubTel"),
+                (String) dataMap.get("billMonth")
+            );
+            if (existingKey.equals(uniqueKey)) {
+                exists = true;
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> items = (List<Map<String, Object>>) dataMap.get("items");
+                Map<String, Object> item = new HashMap<>();
+                item.put("itemCode", summary.getBillItemCode());
+                item.put("itemAmt", summary.getBillItemAmt());
+                items.add(item);
+                break;
+            }
+        }
+
+        // If the uniqueKey does not exist, create a new entry
+        if (!exists) {
+            Map<String, Object> dataMap = new HashMap<>();
+            dataMap.put("billOff", summary.getBillOff());
+            dataMap.put("billTel", summary.getBillTel());
+            dataMap.put("billSubOff", summary.getBillSubOff());
+            dataMap.put("billSubTel", summary.getBillSubTel());
+            dataMap.put("billMonth", summary.getBillMonth());
+            dataMap.put("billAmt", summary.getBillAmt());
+            dataMap.put("items", new ArrayList<Map<String, Object>>());
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("itemCode", summary.getBillItemCode());
+            item.put("itemAmt", summary.getBillItemAmt());
+            ((List<Map<String, Object>>) dataMap.get("items")).add(item);
+
+            groupedData.get(billOffBelong).add(dataMap);
+        }
+    }
+
+    // Iterate over groupedData
+    for (String billOffBelong : groupedData.keySet()) {
+        System.out.println("Bill Off Belong: " + billOffBelong);
+        for (Map<String, Object> dataMap : groupedData.get(billOffBelong)) {
+            System.out.println("Data: " + dataMap);
+            // You can further process each dataMap here
+        }
+    }
+
+    String txtFileName = "BPZ10_T" + opcDate + ".TXT";
+    String txtFileAbsolutePath = csvFilePath + txtFileName;
+
+    try {
+      // 建立 TxtGenerator 物件
+      TxtGenerator txtGenerator = new TxtGenerator(txtFileAbsolutePath);
+
+      // header
+      txtGenerator.writeValue(25, 56, titleName);
+      txtGenerator.writeValue(63, 72, "製表日期：");
+      txtGenerator.writeValue(75, 81, rocDate);
+      txtGenerator.nextRow();
+
+      // columns
+      txtGenerator.writeValue(6, 12, "機構代號(代)");
+      txtGenerator.writeValue(15, 26, "設備號碼(代)");
+      txtGenerator.writeValue(29, 40, "機構代號(子)");
+      txtGenerator.writeValue(43, 54, "設備號碼(子)");
+      txtGenerator.writeValue(57, 64, "出帳年月");
+      Integer lastIndex = 72;
+      txtGenerator.writeValue(67, lastIndex, "總金額");
+
+      int maxItemsSize = groupedData.values().stream()
+          .flatMap(List::stream)
+          .mapToInt(dataMap -> ((List<Map<String, Object>>) dataMap.get("items")).size())
+          .max()
+          .orElse(0);
+
+      for (int i = 0; i < maxItemsSize; i++) {
+        txtGenerator.writeValue(lastIndex + 3, lastIndex + 10, "費用代號");
+        lastIndex = lastIndex + 10;
+        txtGenerator.writeValue(lastIndex + 5, lastIndex + 8, "金額");
+        lastIndex = lastIndex + 8;
+      }
+      txtGenerator.nextRow();
+      
+      Integer rowCount = 0;
+
+      BigDecimal grandTotalBillAmtNumber = BigDecimal.ZERO;
+      Map<String, BigDecimal> grandTotalItemAmts = new LinkedHashMap<>();
+
+      for (Map.Entry<String, List<Map<String, Object>>> entry : groupedData.entrySet()) {
+        String billOffBelong = entry.getKey();
+        List<Map<String, Object>> dataMaps = entry.getValue();
+
+        BigDecimal totalBillAmtNumber = BigDecimal.ZERO;
+        Map<String, BigDecimal> totalItemAmts = new LinkedHashMap<>();
+
+        for (Map<String, Object> dataMap : dataMaps) {
+          rowCount++;
+          String billOff = (String) dataMap.get("billOff");
+          String billTel = (String) dataMap.get("billTel");
+          String billSubOff = (String) dataMap.get("billSubOff");
+          String billSubTel = (String) dataMap.get("billSubTel");
+          String billMonth = (String) dataMap.get("billMonth");
+          BigDecimal billAmtNumber = (BigDecimal) dataMap.get("billAmt");
+          String billAmt = StringUtils.formatNumberWithCommasWithoutQuotes(billAmtNumber);
+
+          // 累加 billAmtNumber
+          totalBillAmtNumber = totalBillAmtNumber.add(billAmtNumber);
+
+          txtGenerator.writeValue(9, 12, billOff, true);
+          txtGenerator.writeValue(15, 26, billTel);
+          txtGenerator.writeValue(37, 40, billSubOff, true);
+          txtGenerator.writeValue(43, 54, billSubTel);
+          txtGenerator.writeValue(60, 64, billMonth);
+          lastIndex = 72;
+          txtGenerator.writeValue(67, lastIndex, billAmt);
+
+          @SuppressWarnings("unchecked")
+          List<Map<String, Object>> items = (List<Map<String, Object>>) dataMap.get("items");
+          for (Map<String, Object> item : items) {
+            String itemCode = (String) item.get("itemCode");
+            BigDecimal itemAmtNumber = (BigDecimal) item.get("itemAmt");
+            String itemAmt = StringUtils.formatNumberWithCommasWithoutQuotes(itemAmtNumber);
+
+            // 累加 itemAmtNumber
+            totalItemAmts.put(itemCode, totalItemAmts.getOrDefault(itemCode, BigDecimal.ZERO).add(itemAmtNumber));
+
+            txtGenerator.writeValue(lastIndex + 7, lastIndex + 10, itemCode);
+            lastIndex = lastIndex + 10;
+            txtGenerator.writeValue(lastIndex + 3, lastIndex + 8, itemAmt);
+            lastIndex = lastIndex + 8;
+          }
+          txtGenerator.nextRow();
+        }
+
+        // 輸出總計行
+        txtGenerator.writeValueCentered(1, 4, "小記");
+        txtGenerator.writeValue(67, 72, StringUtils.formatNumberWithCommasWithoutQuotes(totalBillAmtNumber));
+        lastIndex = 72;
+        for (Map.Entry<String, BigDecimal> totalItem : totalItemAmts.entrySet()) {
+          txtGenerator.writeValue(lastIndex + 7, lastIndex + 10, totalItem.getKey());
+          lastIndex = lastIndex + 10;
+          txtGenerator.writeValue(lastIndex + 3, lastIndex + 8, StringUtils.formatNumberWithCommasWithoutQuotes(totalItem.getValue()));
+          lastIndex = lastIndex + 8;
+        }
+        txtGenerator.nextRow();
+
+        // 累加到總計
+        grandTotalBillAmtNumber = grandTotalBillAmtNumber.add(totalBillAmtNumber);
+        for (Map.Entry<String, BigDecimal> totalItem : totalItemAmts.entrySet()) {
+          grandTotalItemAmts.put(totalItem.getKey(), grandTotalItemAmts.getOrDefault(totalItem.getKey(), BigDecimal.ZERO).add(totalItem.getValue()));
+        }
+      }
+
+      // 輸出總計行
+      txtGenerator.writeValueCentered(1, 4, "合計");
+      txtGenerator.writeValue(67, 72, StringUtils.formatNumberWithCommasWithoutQuotes(grandTotalBillAmtNumber));
+      lastIndex = 72;
+      for (Map.Entry<String, BigDecimal> grandTotalItem : grandTotalItemAmts.entrySet()) {
+        txtGenerator.writeValue(lastIndex + 7, lastIndex + 10, grandTotalItem.getKey());
+        lastIndex = lastIndex + 10;
+        txtGenerator.writeValue(lastIndex + 3, lastIndex + 8, StringUtils.formatNumberWithCommasWithoutQuotes(grandTotalItem.getValue()));
+        lastIndex = lastIndex + 8;
+      }
+      txtGenerator.nextRow();
+
+      // 儲存 TXT 檔案
+      txtGenerator.save();
+
+      dDataList.add(dData.builder()
+          .rptFileName(txtFileName)
+          .rptTimes("3")
+          .billMonth(rocYYYMM)
+          .rptDate(opcDate)
+          .rptFileCount(rowCount)
+          .rptFileAmt(grandTotalBillAmtNumber)
+          .rptSecretMark("N")
+          .build());
+    } catch (Exception e) {
+      // 處理例外情況
+      log.error("Error writing TXT file: " + txtFileAbsolutePath, e);
       errorCount++;
     }
 

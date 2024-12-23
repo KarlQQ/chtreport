@@ -13,6 +13,7 @@ import ccbs.dao.core.entity.RptBP22TOTSummary;
 import ccbs.dao.core.entity.RptBPGNERPSummary;
 import ccbs.dao.core.entity.RptBPOWE2WSummary;
 import ccbs.dao.core.entity.RptBPOWESummary;
+import ccbs.dao.core.entity.RptBPZ10Summary;
 import ccbs.dao.core.entity.RptBP222OTSummary;
 import ccbs.dao.core.constants.DateTypeConstants;
 
@@ -58,6 +59,13 @@ public interface RptAccountSummaryMapper {
     @Param("keepCnt") String keepCnt, 
     @Param("inputOPID") String inputOPID, 
     @Param("inputSTATUS") String inputSTATUS);
+
+  @SelectProvider(type = SqlProvider.class, method = "selectBPZ10Summary")
+  List<RptBPZ10Summary> selectBPZ10Summary(
+    @Param("currentDate") String currentDate,
+    @Param("itemType") String itemType);
+
+    
 
   class SqlProvider {
     public String selectRptAccountSummary(@Param("currentDate") String currentDate, @Param("offType") String offType,
@@ -590,6 +598,49 @@ public interface RptAccountSummaryMapper {
       return sql.toString();
     }
     
+    public String selectBPZ10Summary(@Param("currentDate") String currentDate,
+    @Param("itemType") String itemType) {
+      StringBuilder sql = new StringBuilder();
+      
+      sql.append("SELECT \n");
+      sql.append("    rit.BILL_ITEM_NAME AS billItemName, \n");
+      sql.append("    rbm.BILL_OFF_BELONG, \n");
+      sql.append("    rbd.BILL_OFF AS billOff, \n");
+      sql.append("    rbd.BILL_TEL AS billTel, \n");
+      sql.append("    COALESCE(brd.SUB_OFF, rbm.BILL_OFF) AS billSubOff, \n");
+      sql.append("    COALESCE(brd.SUB_TEL, rbm.BILL_TEL) AS billSubTel, \n");
+      sql.append("    rbd.BILL_MONTH AS billMonth, \n");
+      sql.append("    rbm.BILL_AMT AS billAmt, \n");
+      sql.append("    ritd.BILL_ITEM_CODE AS billItemCode, \n");
+      sql.append("    rbd.BILL_ITEM_AMT AS billItemAmt \n");
+      sql.append("FROM \n");
+      sql.append("    (SELECT * FROM RPT_ITEM_TYPE WHERE BILL_ITEM_TYPE = #{itemType}) rit \n");
+      sql.append("JOIN \n");
+      sql.append("    RPT_ITEM_TYPE_DETL ritd \n");
+      sql.append("    ON rit.BILL_ITEM_TYPE = ritd.BILL_ITEM_TYPE \n");
+      sql.append("JOIN \n");
+      sql.append("    RPT_BILL_DETL rbd \n");
+      sql.append("    ON ritd.BILL_ITEM_CODE = rbd.BILL_ITEM_CODE \n");
+      sql.append("    AND TO_NUMBER(SUBSTR(rbd.BILL_MONTH, 1, 5)) >= \n");
+      sql.append("        TO_NUMBER(TO_CHAR(ADD_MONTHS(TO_DATE(#{currentDate}, 'YYYYMM'), -4), 'YYYYMM')) - 191100 \n");
+      sql.append("LEFT JOIN \n");
+      sql.append("    BILL_RELS_DETL brd \n");
+      sql.append("    ON rbd.BILL_ITEM_CODE = brd.SUB_ITEM_CODE \n");
+      sql.append("    AND rbd.BILL_MONTH = brd.BILL_MONTH \n");
+      sql.append("    AND rbd.BILL_ID = brd.BILL_ID \n");
+      sql.append("    AND rbd.BILL_OFF = brd.BILL_OFF \n");
+      sql.append("    AND rbd.BILL_TEL = brd.BILL_TEL \n");
+      sql.append("JOIN \n");
+      sql.append("    RPT_BILL_MAIN rbm \n");
+      sql.append("    ON rbd.BILL_MONTH = rbm.BILL_MONTH \n");
+      sql.append("    AND rbd.BILL_ID = rbm.BILL_ID \n");
+      sql.append("    AND rbd.BILL_OFF = rbm.BILL_OFF \n");
+      sql.append("    AND rbd.BILL_TEL = rbm.BILL_TEL \n");
+      sql.append("ORDER BY \n");
+      sql.append("    rbd.BILL_OFF \n");
+
+      return sql.toString();
+    }
   }
 
 }

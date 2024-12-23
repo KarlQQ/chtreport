@@ -3,6 +3,7 @@ package ccbs.controller;
 import ccbs.dao.core.entity.RptList;
 import ccbs.model.batch.BatchArrearsInputStr;
 import ccbs.model.batch.BatchSimpleRptInStr;
+import ccbs.model.batch.BatchSimpleRptInStrWithItemType;
 import ccbs.model.batch.BatchSimpleRptInStrWithOpid;
 import ccbs.model.batch.BatchSimpleRptInStrWithType;
 import ccbs.model.batch.RptFileZipEncryptSingleIn;
@@ -661,4 +662,23 @@ public class RptController {
       return ResponseEntity.internalServerError().body(e.getMessage());
     }
   }
+
+  @Operation(summary = "產生已出帳未銷帳彙總表[特定業務]統計表", tags = {"Reports"},
+  description = "產生已出帳未銷帳彙總表[特定業務]統計表")
+  @PostMapping(value = "/batchBPZ10Rpt", produces = "application/json;charset=UTF-8")
+  public ResponseEntity<String>
+  batchBPZ10Rpt(@RequestBody BatchSimpleRptInStrWithItemType input) {
+    try {
+      ResponseEntity<String> response = ValidationUtils.validateBatchSimpleRptInStr(input);
+      if (response != null)
+        return response;
+
+      arrearsService.batchBPZ10Rpt(input);
+      return ResponseEntity.ok("已出帳未銷帳彙總表[特定業務]產生成功");
+    } catch (Exception e) {
+      log.error("已出帳未銷帳彙總表[特定業務]產生失敗", e);
+      return ResponseEntity.internalServerError().body(e.getMessage());
+    }
+  }
+  
 }
