@@ -4,6 +4,7 @@ import ccbs.model.batch.BatchArrearsInputStr;
 import ccbs.model.batch.BatchSimpleRptInStr;
 import ccbs.model.batch.BatchSimpleRptInStrWithItemType;
 import ccbs.model.batch.BatchSimpleRptInStrWithOpid;
+import ccbs.model.batch.BatchSimpleRptInStrWithTaskMode;
 import ccbs.model.batch.BatchSimpleRptInStrWithType;
 import ccbs.model.batch.SingleArrearsInputStr;
 import ccbs.model.batch.SingleArrearsOutputStr;
@@ -41,4 +42,19 @@ public interface ArrearsService {
 
   public Result batchBPZ10Rpt(BatchSimpleRptInStrWithItemType input) throws Exception;
   
+  public Result batchBPGNIDDARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception;
+
+  public Result batchBPGNIDDCRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception;
+
+  public Result batchBPGNIDD2ARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception;
+
+  public Result batchBPGNIDD2CRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception;
+
+  public Result batchBPGNIDMARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception;
+
+  public Result batchBPGNIDMCRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception;
+
+  public Result batchBPGNIDM2ARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception;
+
+  public Result batchBPGNIDM2CRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception;
 }

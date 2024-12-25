@@ -3,6 +3,10 @@ package ccbs.util;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
+
+import ccbs.service.impl.ArrearsRptServiceImpl;
 
 public class TxtGenerator {
 
@@ -72,5 +76,31 @@ public class TxtGenerator {
       }
       writer.flush();
     }
+  }
+
+  public void saveAsPdf(String pdfFilePath, String watermarkText) throws DocumentException, IOException {
+    Document document = new Document();
+    PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(pdfFilePath));
+    document.open();
+    
+    Font font = ArrearsRptServiceImpl.PdfUtils.createFont(7, 0, null);
+    
+    // Write allRows content to PDF
+    for (List<String> row : allRows) {
+        String line = String.join("", row);
+        document.add(new Paragraph(line, font)); // 使用支持中文的字型
+    }
+    
+    // Add watermark to each page
+    PdfContentByte canvas = writer.getDirectContentUnder();
+    Phrase watermark = new Phrase(watermarkText);
+    int totalPages = writer.getPageNumber();
+    for (int i = 1; i <= totalPages; i++) {
+        document.newPage();
+        canvas = writer.getDirectContentUnder();
+        ColumnText.showTextAligned(canvas, Element.ALIGN_CENTER, watermark, 298, 421, 45);
+    }
+    
+    document.close();
   }
 }

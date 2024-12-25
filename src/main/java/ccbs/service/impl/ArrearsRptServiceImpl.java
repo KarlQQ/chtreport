@@ -7,6 +7,7 @@ import ccbs.conf.aop.RptLogExecution;
 import ccbs.conf.base.Bp01Config.Bp01f0013Config;
 import ccbs.dao.core.constants.DateTypeConstants;
 import ccbs.dao.core.entity.BillRels;
+import ccbs.dao.core.entity.EMPData;
 import ccbs.dao.core.entity.RptAccountSummary;
 import ccbs.dao.core.entity.RptBP2230D4Summary;
 import ccbs.dao.core.entity.RptBP2230D5Summary;
@@ -14,6 +15,7 @@ import ccbs.dao.core.entity.RptBP2230D6Summary;
 import ccbs.dao.core.entity.RptBP2240D1Summary;
 import ccbs.dao.core.entity.RptBP22TOTSummary;
 import ccbs.dao.core.entity.RptBPGNERPSummary;
+import ccbs.dao.core.entity.RptBPGNIDSummary;
 import ccbs.dao.core.entity.RptBPGUSUBSummary;
 import ccbs.dao.core.entity.RptBPOWE2WSummary;
 import ccbs.dao.core.entity.RptBPOWESummary;
@@ -30,11 +32,13 @@ import ccbs.data.entity.QueryAllNameAddrOfBillHistoryOutput;
 import ccbs.data.entity.QueryAllNameAddrOfBillHistoryOutput.ListItem;
 import ccbs.model.batch.ArrearsFileLineInput;
 import ccbs.model.batch.BP221D6_ReportRowForm;
+import ccbs.model.batch.BPGNIDFileLineInput;
 import ccbs.model.batch.BPGUSUB_ReportRowForm;
 import ccbs.model.batch.BatchArrearsInputStr;
 import ccbs.model.batch.BatchSimpleRptInStr;
 import ccbs.model.batch.BatchSimpleRptInStrWithItemType;
 import ccbs.model.batch.BatchSimpleRptInStrWithOpid;
+import ccbs.model.batch.BatchSimpleRptInStrWithTaskMode;
 import ccbs.model.batch.BatchSimpleRptInStrWithType;
 import ccbs.model.batch.IdnoData;
 import ccbs.model.batch.PersonalInfoMaskStr;
@@ -71,12 +75,15 @@ import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.text.pdf.draw.LineSeparator;
+
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -86,6 +93,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -120,6 +128,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   BillRelsDynamicSqlSupport.BillRels billRels =
       BillRelsDynamicSqlSupport.billRels.withAlias("billRels");
   @Value("${ccbs.inputFilePath}") private String inputFilePath;
+  @Value("${ccbs.bpgnidInputFilePath}") private String bpgnidInputFilePath;
   @Value("${ccbs.pdfFilePath}") private String pdfFilePath;
   @Value("${ccbs.csvFilePath}") private String csvFilePath;
   @Value("${ccbs.txtFilePath}") private String txtFilePath;
@@ -433,7 +442,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           + " time: " + getCurrentDateTime());
 
       if (inputType.equals("2")) {
-        generateTxt(input, arrearsInputStrs, genMaskReportFlg, naturalIncludeFlg);
+        generateTxt(input, arrearsInputStrs, genMaskReportFlg);
       }
 
       // generate mask report when genMaskReportFlg is true
@@ -465,7 +474,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
 
         if (inputType.equals("2")) {
-          generateTxt(input, arrearsInputStrs, genMaskReportFlg, naturalIncludeFlg);
+          generateTxt(input, arrearsInputStrs, genMaskReportFlg);
         }
       }
 
@@ -803,8 +812,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     return null;
   }
 
-  private dData generateTxt(BatchArrearsInputStr input, List<SingleArrearsInputStr> arrearsInputStrs,
-    boolean genSecretReportFlg, boolean naturalIncludeFlg) {
+  private void generateTxt(BatchArrearsInputStr input, List<SingleArrearsInputStr> arrearsInputStrs,
+    boolean genSecretReportFlg) {
     try {
         
       String isRerun = input.getIsRerun();
@@ -833,50 +842,44 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       }
       String billIdnoStr = billIdnoBuilder.toString();
 
-      if (billIdnoStr == null || billIdnoStr.isEmpty()) {
-        return null;
+      if (billIdnoStr != null && !billIdnoStr.isEmpty()) {
+        TxtGenerator txtGenerator = new TxtGenerator(txtFileAbsolutePath);
+        
+        List<RptBPGUSUBSummary> rptBPGUSUBSummaries = rptAccountSummaryMapper.selectBPGUSUBSummary(billIdnoStr, inputItem);
+        for (RptBPGUSUBSummary summary : rptBPGUSUBSummaries) {
+          String billIdno = summary.getBillIdno() != null ? (String) summary.getBillIdno() : "";
+          String billMonth = summary.getBillMonth() != null ? (String) summary.getBillMonth() : "";
+          String billId = summary.getBillId() != null ? (String) summary.getBillId() : "";
+          String billCycle = summary.getBillCycle() != null ? (String) summary.getBillCycle() : "";
+          String dueId = summary.getDueId() != null ? (String) summary.getDueId() : "";
+          String billOff = summary.getBillOff() != null ? (String) summary.getBillOff() : "";
+          String billTel = summary.getBillTel() != null ? (String) summary.getBillTel() : "";
+          String totalAmt = StringUtils.formatNumberWithCommasWithoutQuotes(summary.getTotalAmt());
+
+          if (genSecretReportFlg) {
+            PersonalInfoMaskStr personalInfoMaskStrIn = new PersonalInfoMaskStr();
+            personalInfoMaskStrIn.setMaskIDNumber(billIdno);
+            PersonalInfoMaskStr personalInfoMaskStrOut = Comm01ServiceImpl.COMM01_0002(personalInfoMaskStrIn);
+            billIdno = personalInfoMaskStrOut.getMaskIDNumber();
+          }
+
+          txtGenerator.writeValue(1, 10, billIdno);
+          txtGenerator.writeValue(11, 15, billMonth);
+          txtGenerator.writeValue(16, 17, billId);
+          txtGenerator.writeValue(18, 18, billCycle);
+          txtGenerator.writeValue(19, 19, dueId);
+          txtGenerator.writeValue(20, 23, billOff);
+          txtGenerator.writeValue(24, 35, billTel);
+          txtGenerator.writeValue(36, 45, totalAmt);
+          txtGenerator.nextRow();
+        }
+
+        txtGenerator.save();
       }
-
-      TxtGenerator txtGenerator = new TxtGenerator(txtFileAbsolutePath);
-      
-      List<RptBPGUSUBSummary> rptBPGUSUBSummaries = rptAccountSummaryMapper.selectBPGUSUBSummary(billIdnoStr, inputItem);
-      for (RptBPGUSUBSummary summary : rptBPGUSUBSummaries) {
-        String billIdno = summary.getBillIdno() != null ? (String) summary.getBillIdno() : "";
-        String billMonth = summary.getBillMonth() != null ? (String) summary.getBillMonth() : "";
-        String billId = summary.getBillId() != null ? (String) summary.getBillId() : "";
-        String billCycle = summary.getBillCycle() != null ? (String) summary.getBillCycle() : "";
-        String dueId = summary.getDueId() != null ? (String) summary.getDueId() : "";
-        String billOff = summary.getBillOff() != null ? (String) summary.getBillOff() : "";
-        String billTel = summary.getBillTel() != null ? (String) summary.getBillTel() : "";
-        String totalAmt = StringUtils.formatNumberWithCommasWithoutQuotes(summary.getTotalAmt());
-
-        txtGenerator.writeValue(1, 10, billIdno);
-        txtGenerator.writeValue(11, 15, billMonth);
-        txtGenerator.writeValue(16, 17, billId);
-        txtGenerator.writeValue(18, 18, billCycle);
-        txtGenerator.writeValue(19, 19, dueId);
-        txtGenerator.writeValue(20, 23, billOff);
-        txtGenerator.writeValue(24, 35, billTel);
-        txtGenerator.writeValue(36, 45, totalAmt);
-        txtGenerator.nextRow();
-      }
-
-      txtGenerator.save();
-
-      dData result = new dData();
-      result.setRptFileName(txtFileName);
-      result.setRptFileCount(rptBPGUSUBSummaries.size());
-      if (naturalIncludeFlg && !genSecretReportFlg) {
-        result.setRptSecretMark("Y");
-      } else {
-        result.setRptSecretMark("N");
-      }
-      return result;
     } catch (Exception e) {
       e.printStackTrace();
     }
 
-    return null;
   }
 
   private String getRocDate(String inputDate) {
@@ -1492,7 +1495,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       for (String billOffBelong : billOffBelongSet) {
         BP221D6_ReportRowForm row = new BP221D6_ReportRowForm();
         row.setOffCode(billOffBelong);
-        row.setOffName(getOfficeName(billOffBelong));
+        row.setOffName(getOfficeName(billOffBelong, "A"));
 
         for (RptAccountSummary summary : aAccountSummaries) {
           if (billOffBelong.equals(summary.getBillOffBelong())) {
@@ -1930,10 +1933,15 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .build();
   }
 
-  private String getOfficeName(String billOffBelong) {
+  private String getOfficeName(String billOffBelong, String transType) {
     OfficeInfoQueryIn officeInfoQueryIn = new OfficeInfoQueryIn();
     officeInfoQueryIn.setOfficeCode(billOffBelong);
-    officeInfoQueryIn.setTransType("A");
+    if (transType != null) {
+      officeInfoQueryIn.setTransType(transType);
+    } else {
+      officeInfoQueryIn.setTransType("A");
+    }
+    
     OfficeInfoQueryOut officeInfoQueryOut = comm01Service.COMM01_0003(officeInfoQueryIn);
     return officeInfoQueryOut.getResultOfficeCN() != null
         ? officeInfoQueryOut.getResultOfficeCN().trim()
@@ -2030,7 +2038,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
           List<String> body = new ArrayList<>();
           body.add(buGroupName);
-          body.add(getOfficeName(billOffBelong));
+          body.add(getOfficeName(billOffBelong, "A"));
           body.add(StringUtils.formatNumberWithCommas(summary.getACol()));
           body.add(StringUtils.formatNumberWithCommas(summary.getBCol()));
           body.add(StringUtils.formatNumberWithCommas(summary.getCCol()));
@@ -2347,7 +2355,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
     for (RptBP2230D5Summary summary : rptBP2230D5Summaries) {
       List<String> dataRow = new ArrayList<>();
-      dataRow.add(getOfficeName(summary.getBillOffBelong()));
+      dataRow.add(getOfficeName(summary.getBillOffBelong(), "A"));
 
       BigDecimal futureMonthsNonBadDebt = summary.getFutureMonthsNonBadDebt() != null
           ? summary.getFutureMonthsNonBadDebt()
@@ -3325,5 +3333,465 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .dDataList(dDataList)
         .errorount(errorCount)
         .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BPGNIDDA")
+  public Result batchBPGNIDDARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+    String rptCode = "BPGNIDDA";
+
+    Integer errorCount = 0;
+    List<dData> dDataList = new ArrayList<>();
+    try {
+        dDataList = batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, false);
+    } catch (Exception e) {
+        log.error("Error in batchBPGNIDRpt: ", e);
+        errorCount++;
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BPGNIDDC")
+  public Result batchBPGNIDDCRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+    String rptCode = "BPGNIDDC";
+    
+    Integer errorCount = 0;
+    List<dData> dDataList = new ArrayList<>();
+    try {
+        dDataList.addAll(batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, false));
+    } catch (Exception e) {
+        log.error("Error in batchBPGNIDRpt: ", e);
+        errorCount++;
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BPGNIDD2A")
+  public Result batchBPGNIDD2ARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+    String rptCode = "BPGNIDD2A";
+
+    Integer errorCount = 0;
+    List<dData> dDataList = new ArrayList<>();
+    try {
+        dDataList = batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, true);
+    } catch (Exception e) {
+        log.error("Error in batchBPGNIDRpt: ", e);
+        errorCount++;
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BPGNIDD2C")
+  public Result batchBPGNIDD2CRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+    String rptCode = "BPGNIDD2C";
+    
+    Integer errorCount = 0;
+    List<dData> dDataList = new ArrayList<>();
+    try {
+        dDataList.addAll(batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, true));
+    } catch (Exception e) {
+        log.error("Error in batchBPGNIDRpt: ", e);
+        errorCount++;
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BPGNIDMA")
+  public Result batchBPGNIDMARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+    String rptCode = "BPGNIDMA";
+    
+    Integer errorCount = 0;
+    List<dData> dDataList = new ArrayList<>();
+    try {
+        dDataList = batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, false);
+    } catch (Exception e) {
+        log.error("Error in batchBPGNIDRpt: ", e);
+        errorCount++;
+    }
+
+    
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BPGNIDMC")
+  public Result batchBPGNIDMCRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+    String rptCode = "BPGNIDMC";
+    
+    Integer errorCount = 0;
+    List<dData> dDataList = new ArrayList<>();
+    try {
+        dDataList.addAll(batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, false));
+    } catch (Exception e) {
+        log.error("Error in batchBPGNIDRpt: ", e);
+        errorCount++;
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BPGNIDM2A")
+  public Result batchBPGNIDM2ARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+    String rptCode = "BPGNIDM2A";
+
+    Integer errorCount = 0;
+    List<dData> dDataList = new ArrayList<>();
+    try {
+        dDataList = batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, true);
+    } catch (Exception e) {
+        log.error("Error in batchBPGNIDRpt: ", e);
+        errorCount++;
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  @Override
+  @RptLogExecution(rptCode = "BPGNIDM2C")
+  public Result batchBPGNIDM2CRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+    String rptCode = "BPGNIDM2C";
+    
+    Integer errorCount = 0;
+    List<dData> dDataList = new ArrayList<>();
+    try {
+        dDataList.addAll(batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, true));
+    } catch (Exception e) {
+        log.error("Error in batchBPGNIDRpt: ", e);
+        errorCount++;
+    }
+
+    return Result.builder()
+        .rptCode(rptCode)
+        .isRerun(isRerun)
+        .opBatchno(jobId)
+        .dDataList(dDataList)
+        .errorount(errorCount)
+        .build();
+  }
+
+  public List<dData> batchBPGNIDRpt(String rptCode, String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId, Boolean checkMask, Boolean isDetail) throws Exception {
+    List<dData> dDataList = new ArrayList<>();
+
+    String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
+    Integer errorCount = 0;
+    Integer fileCount = 0;
+    BigDecimal totalAmt = BigDecimal.ZERO;
+
+    List<BPGNIDFileLineInput> bpgnidFileLineInput = getBPGNIDFileInputInput(inputFileName);
+
+    if (bpgnidFileLineInput == null) {
+        throw new IllegalArgumentException("input 檔案未找到: " + inputFileName);
+    }
+
+    bpgnidFileLineInput.sort(Comparator
+    .comparing(BPGNIDFileLineInput::getLbOffBelong)
+    .thenComparing(BPGNIDFileLineInput::getLbIdno)
+    .thenComparing(BPGNIDFileLineInput::getLbInstallDate)
+    .thenComparing(BPGNIDFileLineInput::getLbTel));
+
+    Map<String, List<BPGNIDFileLineInput>> groupedByLbOff = new HashMap<>();
+    Map<String, List<BPGNIDFileLineInput>> groupedByLbOffMask = new HashMap<>();
+
+    for (BPGNIDFileLineInput lineInput : bpgnidFileLineInput) {
+      String lbOff = lineInput.getLbOff();
+
+
+      if (checkMask && Comm01ServiceImpl.COMM01_0001(lineInput.getLbIdno())) {
+        PersonalInfoMaskStr personalInfoMaskStrIn = new PersonalInfoMaskStr();
+        personalInfoMaskStrIn.setMaskIDNumber(lineInput.getLbIdno());
+        personalInfoMaskStrIn.setMaskTelno(lineInput.getLbTel());
+        PersonalInfoMaskStr personalInfoMaskStrOut = Comm01ServiceImpl.COMM01_0002(personalInfoMaskStrIn);
+        lineInput.setLbIdnoMask(personalInfoMaskStrOut.getMaskIDNumber());
+        lineInput.setLbTelMask(personalInfoMaskStrOut.getMaskTelno());
+
+        if (!groupedByLbOffMask.containsKey(lbOff)) {
+          groupedByLbOffMask.put(lbOff, new ArrayList<>());
+        }
+        groupedByLbOffMask.get(lbOff).add(lineInput);
+      } else {
+        if (!groupedByLbOff.containsKey(lbOff)) {
+          groupedByLbOff.put(lbOff, new ArrayList<>());
+        }
+        groupedByLbOff.get(lbOff).add(lineInput);
+      }
+      
+    }
+
+    try {
+      generatePDFReport(rptCode, outputDate, opcYYYMM, opcDate, groupedByLbOff, dDataList, false, isDetail);
+      if (checkMask && groupedByLbOffMask.size() > 0) {
+        generatePDFReport(rptCode, outputDate, opcYYYMM, opcDate, groupedByLbOffMask, dDataList, true, isDetail);
+      }
+
+    } catch (Exception e) {
+      // 處理例外情況
+      log.error("Error writing TXT file: ", e);
+      errorCount++;
+    }
+
+    return dDataList;
+  }
+
+
+  private List<BPGNIDFileLineInput> getBPGNIDFileInputInput(String filename) {
+    List<String> content = new ArrayList<>();
+
+    Path filePath = Paths.get(bpgnidInputFilePath, filename);
+
+    log.debug("Reading file from path: " + filePath.toAbsolutePath());
+
+    try {
+      if (Files.exists(filePath) && Files.isRegularFile(filePath)) {
+        // 使用 BIG5 編碼讀取檔案
+        try (BufferedReader reader = Files.newBufferedReader(filePath, Charset.forName("BIG5"))) {
+          String line;
+          while ((line = reader.readLine()) != null) {
+            content.add(line);
+          }
+        }
+      }
+    } catch (IOException e) {
+      System.err.println("An error occurred while reading file: " + e.getMessage());
+    } catch (Exception e) {
+      System.err.println("An error occurred while final write log " + e.getMessage());
+      throw new RuntimeException(e);
+    }
+
+    if (content == null || content.size() == 0) {
+      return null;
+    }
+
+    List<BPGNIDFileLineInput> bpgnidFileLineInputs = new ArrayList<>();
+
+    for (int i = 0; i < content.size(); i++) {
+      String line = content.get(i);
+      // 如果 line 長度不足 136，則補上空白
+      if (line.length() < 136) {
+        line = String.format("%-" + 136 + "s", line);
+      }
+
+      BPGNIDFileLineInput bpgnidFileLineInput = new BPGNIDFileLineInput();
+      bpgnidFileLineInput.setLbOffBelong(line.substring(0, 3).trim());
+      bpgnidFileLineInput.setLbFiller(line.substring(4, 9).trim());
+      bpgnidFileLineInput.setLbIdno(line.substring(10, 19).trim());
+      bpgnidFileLineInput.setLbOff(line.substring(20, 23).trim());
+      bpgnidFileLineInput.setLbTel(line.substring(24, 35).trim());
+      bpgnidFileLineInput.setLbInstallDate(line.substring(36, 42).trim());
+      bpgnidFileLineInput.setLbBillName(line.substring(43, 83).trim());
+      bpgnidFileLineInput.setLbZipCode(line.substring(84, 88).trim());
+      bpgnidFileLineInput.setLbAdr(line.substring(89, 129).trim());
+      bpgnidFileLineInput.setLbEmpId(line.substring(130, 135).trim());
+      //bpgnidFileLineInput.setLbAdslExg(line.substring(136, 136).trim());
+
+      bpgnidFileLineInputs.add(bpgnidFileLineInput);
+    }
+
+    return bpgnidFileLineInputs;
+  }
+
+  private void generatePDFReport(String rptCode, String outputDate, String opcYYYMM, String opcDate,
+      Map<String, List<BPGNIDFileLineInput>> groupedByLbOff, List<dData> dDataList, Boolean isMask, Boolean isDetail) throws IOException {
+
+    String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
+    BigDecimal totalAmt = BigDecimal.ZERO;
+    for (Map.Entry<String, List<BPGNIDFileLineInput>> entry : groupedByLbOff.entrySet()) {
+      String lbOff = entry.getKey();
+
+      String txtFileName = "";
+      if (isMask) {
+        txtFileName = rptCode + "_" + lbOff + "_T" + outputDate + "_MASK.TXT";
+      } else {
+        txtFileName = rptCode + "_" + lbOff + "_T" + outputDate + ".TXT";
+      }
+
+      String txtFileAbsolutePath = csvFilePath + txtFileName;
+      TxtGenerator txtGenerator = new TxtGenerator(txtFileAbsolutePath);
+
+      Boolean headerReady = false;
+      Boolean footerReady = false;
+      String cerrentOffBelongName = null;
+      List<BPGNIDFileLineInput> lineInputs = entry.getValue();
+      log.debug("Processing lbOff: " + lbOff);
+      for (BPGNIDFileLineInput lineInput : lineInputs) {
+        log.debug("Processing line input: " + lineInput);
+        if (isDetail) {
+          txtGenerator.writeValue(1, 4, lineInput.getLbOffBelong());
+          txtGenerator.writeValue(5, 8, lineInput.getLbOff());
+          if (isMask) {
+            txtGenerator.writeValue(9, 20, lineInput.getLbTelMask());
+          } else {
+            txtGenerator.writeValue(9, 20, lineInput.getLbTel());
+          }
+          txtGenerator.writeValue(21, 27, lineInput.getLbInstallDate());
+          txtGenerator.writeValue(28, 35, lineInput.getLbEmpId());
+
+          String sumAmt = "0";
+          String billIdno = lineInput.getLbIdno();
+          if (billIdno != null && !billIdno.isEmpty()) {
+            RptBPGNIDSummary rptBPGNIDSummary = rptAccountSummaryMapper.selectBPGNIDSummary(opcYYYMM, billIdno);
+            if (rptBPGNIDSummary != null) {
+              sumAmt = StringUtils.formatNumberWithCommasWithoutQuotes(rptBPGNIDSummary.getTotalAmt());
+            }
+          }
+
+          txtGenerator.writeValue(36, 50, sumAmt);
+          txtGenerator.writeValue(51, 60, billIdno);
+          txtGenerator.writeValue(61, 140, lineInput.getLbBillName());
+          //txtGenerator.writeValue(141, 141, lineInput.getLbAdslExg());
+          txtGenerator.nextRow();
+
+        } else {
+
+          String offBelongName = getOfficeName(lineInput.getLbOffBelong(), "C");
+          if (cerrentOffBelongName == null || cerrentOffBelongName == offBelongName) {
+            headerReady = false;
+            footerReady = false;
+            cerrentOffBelongName = offBelongName;
+          }
+          // header
+          if (!headerReady) {
+            txtGenerator.writeValue(1, 10, rptCode, true);
+            txtGenerator.writeValue(100, 200, "中華電信北區分公司新裝設備所有人證號下逾期欠費金額報表", true);
+            txtGenerator.nextRow();
+
+            txtGenerator.writeValue(1, 10, "報表日期：", true);
+            txtGenerator.writeValue(11, 20, rocYYYMM, true);
+            txtGenerator.nextRow();
+
+            txtGenerator.writeValue(1, 10, "受理營運處：", true);
+            txtGenerator.writeValue(11, 20, offBelongName, true);
+            txtGenerator.nextRow();
+
+            txtGenerator.writeValue(1, 209, "-".repeat(209), true);
+            txtGenerator.nextRow();
+
+            txtGenerator.writeValue(1, 4, "機構代號");
+            txtGenerator.writeValue(13, 24, "新申裝設備號碼");
+            txtGenerator.writeValue(27, 33, "申裝日");
+            txtGenerator.writeValue(42, 47, "受理員代碼");
+            txtGenerator.writeValue(50, 64, "欠費金額");
+            txtGenerator.writeValue(67, 76, "證號");
+            txtGenerator.writeValue(79, 158, "名稱");
+            txtGenerator.writeValue(161, 174, "員工姓名");
+            txtGenerator.writeValue(177, 208, "單位名稱");
+            txtGenerator.nextRow();
+
+            headerReady = true;
+          }
+
+          // body
+          txtGenerator.writeValue(1, 4, lineInput.getLbOff());
+          if (isMask) {
+            txtGenerator.writeValue(13, 24, lineInput.getLbTelMask());
+          } else {
+            txtGenerator.writeValue(13, 24, lineInput.getLbTel());
+          }
+          
+          txtGenerator.writeValue(27, 33, lineInput.getLbInstallDate());
+          txtGenerator.writeValue(42, 47, lineInput.getLbEmpId());
+
+          String sumAmt = "0";
+          String billIdno = lineInput.getLbIdno();
+          if (billIdno != null && !billIdno.isEmpty()) {
+            RptBPGNIDSummary rptBPGNIDSummary = rptAccountSummaryMapper.selectBPGNIDSummary(opcYYYMM, billIdno);
+            if (rptBPGNIDSummary != null) {
+              sumAmt = StringUtils.formatNumberWithCommasWithoutQuotes(rptBPGNIDSummary.getTotalAmt());
+            }
+          }
+
+          txtGenerator.writeValue(50, 64, sumAmt);
+          if (isMask) {
+            txtGenerator.writeValue(67, 76, lineInput.getLbIdnoMask());
+          } else {
+            txtGenerator.writeValue(67, 76, billIdno);
+          }
+          
+          txtGenerator.writeValue(79, 158, lineInput.getLbBillName());
+
+          EMPData empData = rptAccountSummaryMapper.selectEMPData(lineInput.getLbEmpId());
+          String cName = (empData != null && empData.getCName() != null) ? empData.getCName() : "";
+          String ouCode = (empData != null && empData.getOuCode() != null) ? empData.getOuCode() : "";
+
+          txtGenerator.writeValue(161, 174, cName);
+          txtGenerator.writeValue(177, 208, ouCode);
+          txtGenerator.nextRow();
+
+          // footer
+          if (!footerReady) {
+            txtGenerator.writeValue(1, 209, "-".repeat(209), true);
+            txtGenerator.nextRow();
+            txtGenerator.writeValue(1, 2, "共計", true);
+            txtGenerator.writeValue(3, 10, String.valueOf(lineInputs.size()) + "筆", true);
+            txtGenerator.nextRow();
+            txtGenerator.nextRow();
+          }
+        }
+      }
+
+      txtGenerator.save();
+
+      dDataList.add(dData.builder()
+          .rptFileName(txtFileName)
+          .rptTimes("3")
+          .billOff(lbOff)
+          .billMonth(rocYYYMM)
+          .rptDate(opcDate)
+          .rptFileCount(groupedByLbOff.size())
+          .rptFileAmt(totalAmt)
+          .rptSecretMark("N")
+          .build());
+    }
   }
 }

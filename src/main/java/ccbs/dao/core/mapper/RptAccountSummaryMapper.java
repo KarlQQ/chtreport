@@ -4,6 +4,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.SelectProvider;
 import java.util.List;
+
+import ccbs.dao.core.entity.EMPData;
 import ccbs.dao.core.entity.RptAccountSummary;
 import ccbs.dao.core.entity.RptBP2230D4Summary;
 import ccbs.dao.core.entity.RptBP2230D5Summary;
@@ -11,6 +13,7 @@ import ccbs.dao.core.entity.RptBP2230D6Summary;
 import ccbs.dao.core.entity.RptBP2240D1Summary;
 import ccbs.dao.core.entity.RptBP22TOTSummary;
 import ccbs.dao.core.entity.RptBPGNERPSummary;
+import ccbs.dao.core.entity.RptBPGNIDSummary;
 import ccbs.dao.core.entity.RptBPGUSUBSummary;
 import ccbs.dao.core.entity.RptBPOWE2WSummary;
 import ccbs.dao.core.entity.RptBPOWESummary;
@@ -70,6 +73,15 @@ public interface RptAccountSummaryMapper {
   List<RptBPGUSUBSummary> selectBPGUSUBSummary(
     @Param("billIdnoList") String billIdnoList,
     @Param("itemType") String itemType);
+
+  @SelectProvider(type = SqlProvider.class, method = "selectBPGNIDSummary")
+  RptBPGNIDSummary selectBPGNIDSummary(
+    @Param("currentDate") String currentDate,
+    @Param("billIdno") String billIdno);
+
+  @SelectProvider(type = SqlProvider.class, method = "selectEMPData")
+  EMPData selectEMPData(
+    @Param("empId") String empId);
 
   class SqlProvider {
     public String selectRptAccountSummary(@Param("currentDate") String currentDate, @Param("offType") String offType,
@@ -752,7 +764,46 @@ public interface RptAccountSummaryMapper {
 
       return sql.toString();
     }
+
+    public String selectBPGNIDSummary(@Param("currentDate") String currentDate,
+    @Param("billIdno") String billIdno) {
+      StringBuilder sql = new StringBuilder();
+      
+      sql.append("SELECT \n");
+      sql.append("    BILL_IDNO AS billIdno, \n");
+      sql.append("    SUM(BILL_AMT) AS sumBillAmt \n");
+      sql.append("FROM RPT_BILL_MAIN rbm \n");
+      sql.append("WHERE 0=0 \n");
+      sql.append("  AND TRIM(BILL_IDNO) = #{billIdno} \n");
+      sql.append("  AND TO_NUMBER(SUBSTR(TO_CHAR(PAYLIMIT), 1, 6)) < TO_NUMBER(#{currentDate}) \n");
+      sql.append("  AND TO_NUMBER(SUBSTR(TO_CHAR(TRIM(SUS_DATE1)), 1, 6)) < TO_NUMBER(#{currentDate}) \n");
+      sql.append("  AND (TRIM(REMARK) = '0' OR TRIM(REMARK) IS NULL) \n");
+      sql.append("  AND (TRIM(TEL_STATUS) IS NOT NULL) \n");
+      sql.append("  AND (FALSE_MARK NOT IN ('N', 'J') OR TRIM(FALSE_MARK) IS NULL) \n");
+      sql.append("  AND (SPLIT_MARK <> 'Y' OR TRIM(SPLIT_MARK) IS NULL) \n");
+      sql.append("  AND (DISB_MARK NOT IN ('F', 'J') OR TRIM(DISB_MARK) IS NULL) \n");
+      sql.append("  AND (LOSE_LAWSUIT_MARK <> 'P' OR TRIM(LOSE_LAWSUIT_MARK) IS NULL) \n");
+      sql.append("GROUP BY BILL_IDNO \n");
+      sql.append("FETCH FIRST 1 ROW ONLY"); // 限制返回一筆資料
+
+      return sql.toString();
+    }
+
+    public String selectEMPData(@Param("empId") String empId) {
+      StringBuilder sql = new StringBuilder();
+      
+      sql.append("SELECT \n");
+      sql.append("    CNAME AS cname, \n");
+      sql.append("    OUCODE1 || OUCODE2 || OUCODE3 || OUCODE4 || OUCODE5 AS oucode \n");
+      sql.append("FROM COMM_EMPDATA ce \n");
+      sql.append("WHERE EMPID = #{empId} \n");
+      sql.append("FETCH FIRST 1 ROW ONLY"); // 限制返回一筆資料
+
+      return sql.toString();
+    }
+    
   }
 
+  
   
 }

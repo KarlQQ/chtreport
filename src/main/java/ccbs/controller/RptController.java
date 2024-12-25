@@ -5,6 +5,7 @@ import ccbs.model.batch.BatchArrearsInputStr;
 import ccbs.model.batch.BatchSimpleRptInStr;
 import ccbs.model.batch.BatchSimpleRptInStrWithItemType;
 import ccbs.model.batch.BatchSimpleRptInStrWithOpid;
+import ccbs.model.batch.BatchSimpleRptInStrWithTaskMode;
 import ccbs.model.batch.BatchSimpleRptInStrWithType;
 import ccbs.model.batch.RptFileZipEncryptSingleIn;
 import ccbs.model.batch.RptFileZipEncryptSingleOut;
@@ -32,6 +33,7 @@ import ccbs.service.intf.Bp01f0003Service;
 import ccbs.service.intf.Bp01f0013Service;
 import ccbs.service.intf.CommOfficeService;
 import ccbs.service.intf.RptLogService;
+import ccbs.util.DateUtils;
 import ccbs.util.ValidationUtils;
 import ccbs.util.comm01.Comm01Service;
 import ccbs.util.comm02.Comm02Service;
@@ -680,5 +682,55 @@ public class RptController {
       return ResponseEntity.internalServerError().body(e.getMessage());
     }
   }
+  
+  @Operation(summary = "產生新設備所有人證號逾期欠費清單統計表", tags = {"Reports"},
+  description = "產生新設備所有人證號逾期欠費清單統計表")
+  @PostMapping(value = "/batchBPGNIDRpt", produces = "application/json;charset=UTF-8")
+  public ResponseEntity<String>
+  batchBPGNIDRpt(@RequestBody BatchSimpleRptInStrWithTaskMode input) {
+    try {
+      ResponseEntity<String> response = ValidationUtils.validateBatchSimpleRptInStr(input);
+      if (response != null)
+        return response;
+
+      String isRerun = input.getIsRerun();
+      String jobId = input.getJobId();
+      String taskMode = input.getTaskMode();
+      String opcDate = input.getOpcDate();
+      String rocDate = DateUtils.convertToRocDate(opcDate);
+      // 日報
+      String dateSuffix = rocDate.substring(3); // 取得 rocDate 的後4碼
+      // 月報
+      String datePrefix = rocDate.substring(0, 5); // 取得 rocDate 的前5碼
+      String opcYYYMM = input.getOpcYearMonth();
+
+      String inputFileName = null;
+      if ("D".equals(taskMode)) {
+        inputFileName = "TAXN215_" + dateSuffix + ".TXT";
+        arrearsService.batchBPGNIDDARpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDD2ARpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
+
+        inputFileName = "NTAXN215_" + dateSuffix + ".TXT";
+        arrearsService.batchBPGNIDDCRpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDD2CRpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
+      } else if ("M".equals(taskMode)) {
+        inputFileName = "TAXN215_" + datePrefix + ".TXT";
+        arrearsService.batchBPGNIDMARpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDM2ARpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
+
+        inputFileName = "NTAXN215_" + datePrefix + ".TXT";
+        arrearsService.batchBPGNIDMCRpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDM2CRpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
+      } else {
+        throw new IllegalArgumentException("Invalid taskMode: " + taskMode);
+      }
+      
+      return ResponseEntity.ok("新設備所有人證號逾期欠費清單產生成功");
+    } catch (Exception e) {
+      log.error("新設備所有人證號逾期欠費清單產生失敗", e);
+      return ResponseEntity.internalServerError().body(e.getMessage());
+    }
+  }
+
   
 }
