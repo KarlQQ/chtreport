@@ -3642,7 +3642,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   }
 
   private void generatePDFReport(String rptCode, String outputDate, String opcYYYMM, String opcDate,
-      Map<String, List<BPGNIDFileLineInput>> groupedByLbOff, List<dData> dDataList, Boolean isMask, Boolean isDetail) throws IOException {
+      Map<String, List<BPGNIDFileLineInput>> groupedByLbOff, List<dData> dDataList, Boolean isMask, Boolean isDetail) throws IOException, DocumentException {
 
     String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
     BigDecimal totalAmt = BigDecimal.ZERO;
@@ -3780,7 +3780,10 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         }
       }
 
-      txtGenerator.save();
+      //txtGenerator.save();
+      String pdfFileName = txtFileName.replace(".TXT", ".PDF");
+      String pdfFileAbsolutePath = csvFilePath + pdfFileName;
+      txtGenerator.saveAsPdf(pdfFileAbsolutePath, txtFileName);
 
       dDataList.add(dData.builder()
           .rptFileName(txtFileName)
