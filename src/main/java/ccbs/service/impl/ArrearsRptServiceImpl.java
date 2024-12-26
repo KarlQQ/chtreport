@@ -3786,7 +3786,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       txtGenerator.saveAsPdf(pdfFileAbsolutePath, txtFileName);
 
       dDataList.add(dData.builder()
-          .rptFileName(txtFileName)
+          .rptFileName(pdfFileName)
           .rptTimes("3")
           .billOff(lbOff)
           .billMonth(rocYYYMM)
