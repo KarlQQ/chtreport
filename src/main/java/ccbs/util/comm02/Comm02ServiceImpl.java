@@ -1,247 +1,244 @@
 package ccbs.util.comm02;
 
-
 import ccbs.model.batch.RptFileZipEncryptSingleIn;
 import ccbs.model.batch.RptFileZipEncryptSingleOut;
 import ccbs.model.batch.RptWatermarkSingleIn;
 import ccbs.model.batch.RptWatermarkSingleOut;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.model.enums.EncryptionMethod;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
-
 @Service
 @Slf4j
 public class Comm02ServiceImpl implements Comm02Service {
+  //   private boolean chkFileExist(String encryptedFile) {
+  //     // Create a File object representing the file
+  //     File file = new File(encryptedFile);
 
-    private boolean chkFileExist(String encryptedFile) {
+  //     // Check if the file exists
+  //     if (file.exists() && file.isFile()) {
+  //       System.out.println("File exists: " + file.getAbsolutePath());
+  //       return true;
+  //     } else {
+  //       System.out.println("File does not exist.");
+  //       return false;
+  //     }
+  //   }
 
-        // Create a File object representing the file
-        File file = new File(encryptedFile);
+  //    RQBP010_(共用)報表浮水印
+  @Override
+  public RptWatermarkSingleOut COMM02_0007_single_file_watermark(RptWatermarkSingleIn inputStr) {
+    boolean addWatermarkOkFlg = false;
+    // file extension chk
+    String fileExtension =
+        inputStr.getRptFileName().substring((inputStr.getRptFileName().indexOf('.') + 1));
 
-        // Check if the file exists
-        if (file.exists() && file.isFile()) {
-            System.out.println("File exists: " + file.getAbsolutePath());
-            return true;
-        } else {
-            System.out.println("File does not exist.");
-            return false;
-        }
+    if (fileExtension.equals("pdf")) {
+      addWatermarkOkFlg = addWatermarkToPdf(inputStr);
     }
 
-    ////    RQBP010_(共用)報表浮水印
-    @Override
-    public RptWatermarkSingleOut COMM02_0007_single_file_watermark(RptWatermarkSingleIn inputStr) {
-
-        boolean addWatermarkOkFlg = false;
-        //file extension chk
-        String fileExtension = inputStr.getRptFileName().substring((inputStr.getRptFileName().indexOf('.') + 1));
-
-        if (fileExtension.equals("pdf")) {
-            addWatermarkOkFlg = addWatermarkToPdf(inputStr);
-        }
-
-        RptWatermarkSingleOut rptWatermarkSingleOut = new RptWatermarkSingleOut();
-        if (addWatermarkOkFlg) {
-            rptWatermarkSingleOut.setCodeResult(true);
-        }
-
-        return rptWatermarkSingleOut;
+    RptWatermarkSingleOut rptWatermarkSingleOut = new RptWatermarkSingleOut();
+    if (addWatermarkOkFlg) {
+      rptWatermarkSingleOut.setCodeResult(true);
     }
 
-    private boolean addWatermarkToPdf(RptWatermarkSingleIn inputStr) {
-//        String src = "input.pdf"; // Path to the input PDF
-//        String dest = "output_with_watermark.pdf"; // Path to the output PDF with watermark
+    return rptWatermarkSingleOut;
+  }
 
-        String inputPdfFile = inputStr.getRptFilePath() + inputStr.getRptFileName();
-        String outputPdfFile = inputStr.getWatermarkRptFilePath() + inputStr.getWatermarkRptFileName();
+  private boolean addWatermarkToPdf(RptWatermarkSingleIn inputStr) {
+    //        String src = "input.pdf"; // Path to the input PDF
+    //        String dest = "output_with_watermark.pdf"; // Path to the output PDF with watermark
 
-        try {
-            PdfReader reader = new PdfReader(inputPdfFile);
-            FileOutputStream fileOutputStream = new FileOutputStream(outputPdfFile);
-            PdfStamper stamper = new PdfStamper(reader, fileOutputStream);
-// tmp comment 2024/09/16 move add password to encrypt method
-//            stamper = setEncryption(stamper, inputStr.getEmpID());
+    String inputPdfFile = inputStr.getRptFilePath() + inputStr.getRptFileName();
+    String outputPdfFile = inputStr.getWatermarkRptFilePath() + inputStr.getWatermarkRptFileName();
 
-            PdfContentByte canvas;
-            int n = reader.getNumberOfPages();
+    try {
+      PdfReader reader = new PdfReader(inputPdfFile);
+      FileOutputStream fileOutputStream = new FileOutputStream(outputPdfFile);
+      PdfStamper stamper = new PdfStamper(reader, fileOutputStream);
+      // tmp comment 2024/09/16 move add password to encrypt method
+      //            stamper = setEncryption(stamper, inputStr.getEmpID());
 
-            // Iterate over each page
-            for (int i = 1; i <= n; i++) {
-                canvas = stamper.getOverContent(i);
-                canvas.setColorFill(new BaseColor(211, 211, 211));
-                // Set watermark properties
-                Phrase watermark = new Phrase(inputStr.getEmpID());
-                // Get page size
-                Rectangle pageSize = reader.getPageSize(i);
+      PdfContentByte canvas;
+      int n = reader.getNumberOfPages();
 
-                // Add watermark to page
-//                ColumnText.showTextAligned(canvas, Element.ALIGN_CENTER, watermark, pageSize.getWidth() / 2, pageSize.getHeight() / 2, 45);
+      // Iterate over each page
+      for (int i = 1; i <= n; i++) {
+        canvas = stamper.getOverContent(i);
+        canvas.setColorFill(new BaseColor(211, 211, 211));
+        // Set watermark properties
+        Phrase watermark = new Phrase(inputStr.getEmpID());
+        // Get page size
+        Rectangle pageSize = reader.getPageSize(i);
 
-                float[][] XY = getWaterMarkPositionaArray(pageSize);
-                for (int j = 0; j < 13; j++) {
-                    ColumnText.showTextAligned(canvas, Element.ALIGN_CENTER, watermark, XY[j][0], XY[j][1], 45);
-                }
+        // Add watermark to page
+        //                ColumnText.showTextAligned(canvas, Element.ALIGN_CENTER, watermark,
+        //                pageSize.getWidth() / 2, pageSize.getHeight() / 2, 45);
 
-//                pdfPageContents.ShowTextAligned(iTextSharp.text.pdf.PdfContentByte.ALIGN_
-//                        CENTER, sText, XY[j, 0],XY[j, 1],textAngle);
-            }
-
-            stamper.close();
-            reader.close();
-            System.out.println("Watermark added successfully.");
-        } catch (IOException | DocumentException e) {
-            e.printStackTrace();
+        float[][] XY = getWaterMarkPositionaArray(pageSize);
+        for (int j = 0; j < 13; j++) {
+          ColumnText.showTextAligned(
+              canvas, Element.ALIGN_CENTER, watermark, XY[j][0], XY[j][1], 45);
         }
 
-        return true;
+        //                pdfPageContents.ShowTextAligned(iTextSharp.text.pdf.PdfContentByte.ALIGN_
+        //                        CENTER, sText, XY[j, 0],XY[j, 1],textAngle);
+      }
+
+      stamper.close();
+      reader.close();
+      System.out.println("Watermark added successfully.");
+    } catch (IOException | DocumentException e) {
+      e.printStackTrace();
     }
 
-    @Override
-    public boolean COMM02_0006_single_file_pdf_encrypt(RptWatermarkSingleIn inputStr) {
-//        String src = "input.pdf"; // Path to the input PDF
-//        String dest = "output_with_watermark.pdf"; // Path to the output PDF with watermark
+    return true;
+  }
 
-        String inputPdfFile =  inputStr.getWatermarkRptFilePath() + inputStr.getWatermarkRptFileName();
-        String outputPdfFile = inputStr.getRptFilePath() + inputStr.getRptFileName();
+  @Override
+  public boolean COMM02_0006_single_file_pdf_encrypt(RptWatermarkSingleIn inputStr) {
+    //        String src = "input.pdf"; // Path to the input PDF
+    //        String dest = "output_with_watermark.pdf"; // Path to the output PDF with watermark
 
-        try {
-            PdfReader reader = new PdfReader(inputPdfFile);
-            FileOutputStream fileOutputStream = new FileOutputStream(outputPdfFile);
-            PdfStamper stamper = new PdfStamper(reader, fileOutputStream);
+    String inputPdfFile = inputStr.getWatermarkRptFilePath() + inputStr.getWatermarkRptFileName();
+    String outputPdfFile = inputStr.getRptFilePath() + inputStr.getRptFileName();
 
-            stamper = setEncryption(stamper, inputStr.getEmpID());
-            stamper.close();
+    try {
+      PdfReader reader = new PdfReader(inputPdfFile);
+      FileOutputStream fileOutputStream = new FileOutputStream(outputPdfFile);
+      PdfStamper stamper = new PdfStamper(reader, fileOutputStream);
 
-            reader.close();
-            System.out.println("Watermark added successfully.");
-        } catch (IOException | DocumentException e) {
-            e.printStackTrace();
-        }
+      stamper = setEncryption(stamper, inputStr.getEmpID());
+      stamper.close();
 
-        return true;
+      reader.close();
+      System.out.println("Watermark added successfully.");
+    } catch (IOException | DocumentException e) {
+      e.printStackTrace();
     }
 
-    private PdfStamper setEncryption(PdfStamper stamper, String empID) throws DocumentException {
+    return true;
+  }
 
-        // Set encryption
-        stamper.setEncryption(
-                empID.getBytes(),  // User password
-                empID.getBytes(), // Owner password
-                PdfWriter.ALLOW_PRINTING, // Permissions
-                PdfWriter.ENCRYPTION_AES_128 // Encryption type
-        );
+  private PdfStamper setEncryption(PdfStamper stamper, String empID) throws DocumentException {
+    // Set encryption
+    stamper.setEncryption(empID.getBytes(), // User password
+        empID.getBytes(), // Owner password
+        PdfWriter.ALLOW_PRINTING, // Permissions
+        PdfWriter.ENCRYPTION_AES_128 // Encryption type
+    );
 
-        return stamper;
+    return stamper;
+  }
+
+  private float[][] getWaterMarkPositionaArray(Rectangle pageSize) {
+    float[][] XY = new float[13][2];
+    float fSlope = pageSize.getHeight() / pageSize.getWidth();
+    float fSpacing = 215f;
+
+    if (pageSize.getWidth() < pageSize.getHeight()) {
+      XY[0][0] = pageSize.getWidth() / 2;
+      XY[0][1] = pageSize.getHeight() / 2;
+      XY[1][0] = pageSize.getWidth() / 2 - fSpacing / 2;
+      XY[1][1] = pageSize.getHeight() / 2 - fSpacing / 2 * fSlope;
+      XY[2][0] = pageSize.getWidth() / 2 - fSpacing / 2;
+      XY[2][1] = pageSize.getHeight() / 2 + fSpacing / 2 * fSlope;
+      XY[3][0] = pageSize.getWidth() / 2 + fSpacing / 2;
+      XY[3][1] = pageSize.getHeight() / 2 - fSpacing / 2 * fSlope;
+      XY[4][0] = pageSize.getWidth() / 2 + fSpacing / 2;
+      XY[4][1] = pageSize.getHeight() / 2 + fSpacing / 2 * fSlope;
+      XY[5][0] = pageSize.getWidth() / 2 - fSpacing;
+      XY[5][1] = pageSize.getHeight() / 2 - fSpacing * fSlope;
+      XY[6][0] = pageSize.getWidth() / 2 - fSpacing;
+      XY[6][1] = pageSize.getHeight() / 2 + fSpacing * fSlope;
+      XY[7][0] = pageSize.getWidth() / 2 + fSpacing;
+      XY[7][1] = pageSize.getHeight() / 2 - fSpacing * fSlope;
+      XY[8][0] = pageSize.getWidth() / 2 + fSpacing;
+      XY[8][1] = pageSize.getHeight() / 2 + fSpacing * fSlope;
+      XY[9][0] = pageSize.getWidth() / 2;
+      XY[9][1] = pageSize.getHeight() / 2 - fSpacing * fSlope;
+      XY[10][0] = pageSize.getWidth() / 2;
+      XY[10][1] = pageSize.getHeight() / 2 + fSpacing * fSlope;
+      XY[11][0] = pageSize.getWidth() / 2 - fSpacing;
+      XY[11][1] = pageSize.getHeight() / 2;
+      XY[12][0] = pageSize.getWidth() / 2 + fSpacing;
+      XY[12][1] = pageSize.getHeight() / 2;
+    } else {
+      XY[0][0] = pageSize.getWidth() / 2;
+      XY[0][1] = pageSize.getHeight() / 2;
+      XY[1][0] = pageSize.getWidth() / 2 - fSpacing / 2 * fSlope;
+      XY[1][1] = pageSize.getHeight() / 2 - fSpacing / 2;
+      XY[2][0] = pageSize.getWidth() / 2 - fSpacing / 2 * fSlope;
+      XY[2][1] = pageSize.getHeight() / 2 + fSpacing / 2;
+      XY[3][0] = pageSize.getWidth() / 2 + fSpacing / 2 * fSlope;
+      XY[3][1] = pageSize.getHeight() / 2 - fSpacing / 2;
+      XY[4][0] = pageSize.getWidth() / 2 + fSpacing / 2 * fSlope;
+      XY[4][1] = pageSize.getHeight() / 2 + fSpacing / 2;
+      XY[5][0] = pageSize.getWidth() / 2 - fSpacing * fSlope;
+      XY[5][1] = pageSize.getHeight() / 2 - fSpacing;
+      XY[6][0] = pageSize.getWidth() / 2 - fSpacing * fSlope;
+      XY[6][1] = pageSize.getHeight() / 2 + fSpacing;
+      XY[7][0] = pageSize.getWidth() / 2 + fSpacing * fSlope;
+      XY[7][1] = pageSize.getHeight() / 2 - fSpacing;
+      XY[8][0] = pageSize.getWidth() / 2 + fSpacing * fSlope;
+      XY[8][1] = pageSize.getHeight() / 2 + fSpacing;
+      XY[9][0] = pageSize.getWidth() / 2 - fSpacing * fSlope;
+      XY[9][1] = pageSize.getHeight() / 2;
+      XY[10][0] = pageSize.getWidth() / 2 + fSpacing * fSlope;
+      XY[10][1] = pageSize.getHeight() / 2;
+      XY[11][0] = pageSize.getWidth() / 2;
+      XY[11][1] = pageSize.getHeight() / 2 - fSpacing;
+      XY[12][0] = pageSize.getWidth() / 2;
+      XY[12][1] = pageSize.getHeight() / 2 + fSpacing;
+    }
+    return XY;
+  }
+
+  @Override
+  public RptFileZipEncryptSingleOut COMM02_0006_single_file_zip_encrypt(
+      RptFileZipEncryptSingleIn inputStr) {
+    String absoluteFileName = inputStr.getRptFilePathAndName();
+    String absoluteZipFileNmae = inputStr.getZipRptFilePathAndName();
+    String empIdAsPassword = inputStr.getEmpID();
+    createPasswordProtectedZip(absoluteFileName, absoluteZipFileNmae, empIdAsPassword);
+    System.out.println("ZIP file created successfully.");
+
+    RptFileZipEncryptSingleOut rptFileZipEncryptSingleOut = new RptFileZipEncryptSingleOut();
+    rptFileZipEncryptSingleOut.setCodeResult(true);
+    return rptFileZipEncryptSingleOut;
+  }
+
+  public boolean createPasswordProtectedZip(
+      String inpuptFileNameWithPath, String zipFileNameWithPath, String password) {
+    ZipFile zipFile = new ZipFile(zipFileNameWithPath, password.toCharArray());
+    ZipParameters zipParameters = new ZipParameters();
+    zipParameters.setEncryptFiles(true);
+    zipParameters.setEncryptionMethod(EncryptionMethod.AES);
+    try {
+      zipFile.addFile(new File(inpuptFileNameWithPath), zipParameters);
+      zipFile.close();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
 
-    private float[][] getWaterMarkPositionaArray(Rectangle pageSize) {
-        float[][] XY = new float[13][2];
-        float fSlope = pageSize.getHeight() / pageSize.getWidth();
-        float fSpacing = 215f;
+    System.out.println("ZIP file with password created successfully.");
 
-        if (pageSize.getWidth() < pageSize.getHeight()) {
-            XY[0][0] = pageSize.getWidth() / 2;
-            XY[0][1] = pageSize.getHeight() / 2;
-            XY[1][0] = pageSize.getWidth() / 2 - fSpacing / 2;
-            XY[1][1] = pageSize.getHeight() / 2 - fSpacing / 2 * fSlope;
-            XY[2][0] = pageSize.getWidth() / 2 - fSpacing / 2;
-            XY[2][1] = pageSize.getHeight() / 2 + fSpacing / 2 * fSlope;
-            XY[3][0] = pageSize.getWidth() / 2 + fSpacing / 2;
-            XY[3][1] = pageSize.getHeight() / 2 - fSpacing / 2 * fSlope;
-            XY[4][0] = pageSize.getWidth() / 2 + fSpacing / 2;
-            XY[4][1] = pageSize.getHeight() / 2 + fSpacing / 2 * fSlope;
-            XY[5][0] = pageSize.getWidth() / 2 - fSpacing;
-            XY[5][1] = pageSize.getHeight() / 2 - fSpacing * fSlope;
-            XY[6][0] = pageSize.getWidth() / 2 - fSpacing;
-            XY[6][1] = pageSize.getHeight() / 2 + fSpacing * fSlope;
-            XY[7][0] = pageSize.getWidth() / 2 + fSpacing;
-            XY[7][1] = pageSize.getHeight() / 2 - fSpacing * fSlope;
-            XY[8][0] = pageSize.getWidth() / 2 + fSpacing;
-            XY[8][1] = pageSize.getHeight() / 2 + fSpacing * fSlope;
-            XY[9][0] = pageSize.getWidth() / 2;
-            XY[9][1] = pageSize.getHeight() / 2 - fSpacing * fSlope;
-            XY[10][0] = pageSize.getWidth() / 2;
-            XY[10][1] = pageSize.getHeight() / 2 + fSpacing * fSlope;
-            XY[11][0] = pageSize.getWidth() / 2 - fSpacing;
-            XY[11][1] = pageSize.getHeight() / 2;
-            XY[12][0] = pageSize.getWidth() / 2 + fSpacing;
-            XY[12][1] = pageSize.getHeight() / 2;
-        } else {
-            XY[0][0] = pageSize.getWidth() / 2;
-            XY[0][1] = pageSize.getHeight() / 2;
-            XY[1][0] = pageSize.getWidth() / 2 - fSpacing / 2 * fSlope;
-            XY[1][1] = pageSize.getHeight() / 2 - fSpacing / 2;
-            XY[2][0] = pageSize.getWidth() / 2 - fSpacing / 2 * fSlope;
-            XY[2][1] = pageSize.getHeight() / 2 + fSpacing / 2;
-            XY[3][0] = pageSize.getWidth() / 2 + fSpacing / 2 * fSlope;
-            XY[3][1] = pageSize.getHeight() / 2 - fSpacing / 2;
-            XY[4][0] = pageSize.getWidth() / 2 + fSpacing / 2 * fSlope;
-            XY[4][1] = pageSize.getHeight() / 2 + fSpacing / 2;
-            XY[5][0] = pageSize.getWidth() / 2 - fSpacing * fSlope;
-            XY[5][1] = pageSize.getHeight() / 2 - fSpacing;
-            XY[6][0] = pageSize.getWidth() / 2 - fSpacing * fSlope;
-            XY[6][1] = pageSize.getHeight() / 2 + fSpacing;
-            XY[7][0] = pageSize.getWidth() / 2 + fSpacing * fSlope;
-            XY[7][1] = pageSize.getHeight() / 2 - fSpacing;
-            XY[8][0] = pageSize.getWidth() / 2 + fSpacing * fSlope;
-            XY[8][1] = pageSize.getHeight() / 2 + fSpacing;
-            XY[9][0] = pageSize.getWidth() / 2 - fSpacing * fSlope;
-            XY[9][1] = pageSize.getHeight() / 2;
-            XY[10][0] = pageSize.getWidth() / 2 + fSpacing * fSlope;
-            XY[10][1] = pageSize.getHeight() / 2;
-            XY[11][0] = pageSize.getWidth() / 2;
-            XY[11][1] = pageSize.getHeight() / 2 - fSpacing;
-            XY[12][0] = pageSize.getWidth() / 2;
-            XY[12][1] = pageSize.getHeight() / 2 + fSpacing;
-        }
-        return XY;
-    }
-
-
-    @Override
-    public RptFileZipEncryptSingleOut COMM02_0006_single_file_zip_encrypt(RptFileZipEncryptSingleIn inputStr) {
-        String absoluteFileName = inputStr.getRptFilePathAndName();
-        String absoluteZipFileNmae = inputStr.getZipRptFilePathAndName();
-        String empIdAsPassword = inputStr.getEmpID();
-        createPasswordProtectedZip(absoluteFileName, absoluteZipFileNmae, empIdAsPassword);
-        System.out.println("ZIP file created successfully.");
-
-        RptFileZipEncryptSingleOut rptFileZipEncryptSingleOut = new RptFileZipEncryptSingleOut();
-        rptFileZipEncryptSingleOut.setCodeResult(true);
-        return rptFileZipEncryptSingleOut;
-    }
-
-    public boolean createPasswordProtectedZip(String inpuptFileNameWithPath, String zipFileNameWithPath, String password) {
-        ZipFile zipFile = new ZipFile(zipFileNameWithPath, password.toCharArray());
-        ZipParameters zipParameters = new ZipParameters();
-        zipParameters.setEncryptFiles(true);
-        zipParameters.setEncryptionMethod(EncryptionMethod.AES);
-        try {
-            zipFile.addFile(new File(inpuptFileNameWithPath), zipParameters);
-            zipFile.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        System.out.println("ZIP file with password created successfully.");
-
-        return true;
-    }
+    return true;
+  }
 }
 
 //    public RptCryptSingleOut COMM02_0006_single_file_encrypt(RptCryptSingleIn inputStr) {
 //        String empIdAsPassword = inputStr.getEmpID();
 //        String inputFile = inputStr.getRptFilePath() + inputStr.getRptFileName();
-//        String encryptedFile = inputStr.getEncryptRptFilePath() + inputStr.getEncryptRptFileName();
+//        String encryptedFile = inputStr.getEncryptRptFilePath() +
+//        inputStr.getEncryptRptFileName();
 //
 //        try {
 //            encryptFile(inputFile, encryptedFile, empIdAsPassword);
@@ -260,8 +257,9 @@ public class Comm02ServiceImpl implements Comm02Service {
 //
 //    public RptCryptSingleOut COMM02_0006_single_file_decrypt(RptCryptSingleIn inputStr) {
 //        String empIdAsPassword = inputStr.getEmpID();
-//        String encryptedFile = inputStr.getEncryptRptFilePath() + inputStr.getEncryptRptFileName();
-//        String decryptedFile = inputStr.getDecryptRptFilePath() + inputStr.getDecryptRptFileName();
+//        String encryptedFile = inputStr.getEncryptRptFilePath() +
+//        inputStr.getEncryptRptFileName(); String decryptedFile = inputStr.getDecryptRptFilePath()
+//        + inputStr.getDecryptRptFileName();
 //
 //        try {
 //            decryptFile(encryptedFile, decryptedFile, empIdAsPassword);
@@ -277,13 +275,13 @@ public class Comm02ServiceImpl implements Comm02Service {
 //        return rptEncryptSingleOut;
 //    }
 
-
 //    RQBP009_(共用)報表加密
 // pdf file with password
 //    public RptCryptSingleOut COMM02_0006_single_pdf_file_encrypt(RptCryptSingleIn inputStr) {
 //        String empIdAsPassword = inputStr.getEmpID();
 //        String inputFile = inputStr.getRptFilePath() + inputStr.getRptFileName();
-//        String encryptedFile = inputStr.getEncryptRptFilePath() + inputStr.getEncryptRptFileName();
+//        String encryptedFile = inputStr.getEncryptRptFilePath() +
+//        inputStr.getEncryptRptFileName();
 ////        String src = "source.pdf"; // Path to the source PDF file
 ////        String dest = "protected.pdf"; // Path where the password-protected PDF will be saved
 //
@@ -327,7 +325,8 @@ public class Comm02ServiceImpl implements Comm02Service {
 //
 ////        String empIdAsPassword = inputStr.getEmpID();
 ////        String inputFile = inputStr.getRptFilePath() + inputStr.getRptFileName();
-////        String encryptedFile = inputStr.getEncryptRptFilePath() + inputStr.getEncryptRptFileName();
+////        String encryptedFile = inputStr.getEncryptRptFilePath() +
+/// inputStr.getEncryptRptFileName();
 ////
 ////        try {
 ////            encryptFile(inputFile, encryptedFile, empIdAsPassword);
@@ -343,8 +342,8 @@ public class Comm02ServiceImpl implements Comm02Service {
 //        return rptEncryptSingleOut;
 //    }
 
-
-//    public static void encryptFile(String inputFilePath, String outputFilePath, String password) throws Exception {
+//    public static void encryptFile(String inputFilePath, String outputFilePath, String password)
+//    throws Exception {
 //        // Generate salt and initialization vector (IV)
 //        byte[] salt = generateSalt();
 //        byte[] iv = new byte[16];
@@ -396,7 +395,8 @@ public class Comm02ServiceImpl implements Comm02Service {
 //        return salt;
 //    }
 
-//    public static void decryptFile(String inputFilePath, String outputFilePath, String password) throws Exception {
+//    public static void decryptFile(String inputFilePath, String outputFilePath, String password)
+//    throws Exception {
 //        try (FileInputStream inputFile = new FileInputStream(inputFilePath);
 //             FileOutputStream outputFile = new FileOutputStream(outputFilePath)) {
 //
@@ -426,5 +426,3 @@ public class Comm02ServiceImpl implements Comm02Service {
 //            }
 //        }
 //    }
-
-

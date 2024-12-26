@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 @Data
 public class Bp01Config {
   private Bp01f0003Config bp01f0003;
-  private Bp01f0007Config bp01f0007;
+  private Rqbp019Config rqbp019;
   private Bp01f0013Config bp01f0013;
   private Bp01f0015Config bp01f0015;
 
@@ -22,8 +22,8 @@ public class Bp01Config {
   }
 
   @Bean
-  public Bp01f0007Config bp01f0007() {
-    return bp01f0007;
+  public Rqbp019Config rqbp019() {
+    return rqbp019;
   }
 
   @Bean
@@ -37,12 +37,24 @@ public class Bp01Config {
   }
 
   @Data
-  public static class Bp01f0007Config {
-    private String rptCode;
-    private String filename;
-    private String fileSource;
-    private String filePattern1;
-    private String filePattern2;
+  public static class Rqbp019Config {
+    private String input;
+    private List<TypeConfig> typeConfigs;
+
+    public TypeConfig getConfig(String type) {
+      return typeConfigs.stream()
+          .filter(typeConfig -> typeConfig.name.equals(type))
+          .findAny()
+          .orElseThrow();
+    }
+
+    @Data
+    public static class TypeConfig {
+      private String name;
+      private String pattern;
+      private String output;
+      private String filename;
+    }
   }
 
   @Data

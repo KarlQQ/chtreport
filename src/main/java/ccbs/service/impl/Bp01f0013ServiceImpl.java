@@ -1,11 +1,11 @@
 package ccbs.service.impl;
 
-import ccbs.conf.aop.RptLogExecution;
+import ccbs.conf.aop.RptLog;
+import ccbs.conf.aop.RptLogAspect.Result;
 import ccbs.conf.base.Bp01Config.Bp01f0013Config;
 import ccbs.data.repository.RptAccountRepository;
 import ccbs.model.batch.dData;
 import ccbs.model.bp01.Bp01f0013DTO;
-import ccbs.service.intf.Bp01Service.Result;
 import ccbs.service.intf.Bp01f0013Service;
 import ccbs.util.DateUtils;
 import ccbs.util.FileUtils;
@@ -36,7 +36,7 @@ public class Bp01f0013ServiceImpl implements Bp01f0013Service {
   @Autowired private RptAccountRepository rptAccountRepository;
 
   @Override
-  @RptLogExecution(rptCode = "BP2230D2")
+  @RptLog(rptCode = "BP2230D2")
   public Result process(String jobId, String opcDate, String opcYearMonth, String isRerun) {
     String rocYearMonth =
         DateUtils.toRocYearMonth(opcYearMonth, config.getYears().getShift(), ChronoUnit.MONTHS);

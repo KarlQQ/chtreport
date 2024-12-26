@@ -36,7 +36,7 @@ public class TxManagerAspect implements ApplicationContextAware {
     }
 
     @Around(value = "service() && myTxManager() && @annotation(annotation)")
-    public Object twiceAsOld(ProceedingJoinPoint pjp, MyTxManager annotation) throws Throwable {
+    public Object twiceAsOld(ProceedingJoinPoint pjp, TxManager annotation) throws Throwable {
         Stack<DataSourceTransactionManager> dsTxManagerStack = new Stack<DataSourceTransactionManager>();
         Stack<TransactionStatus> txStatusStack = new Stack<TransactionStatus>();
         try {
@@ -62,7 +62,7 @@ public class TxManagerAspect implements ApplicationContextAware {
      * @param myTxManager
      * @return
      */
-    private boolean openTransaction(Stack<DataSourceTransactionManager> dsTxManagerStack, Stack<TransactionStatus> txStatusStack, MyTxManager myTxManager) {
+    private boolean openTransaction(Stack<DataSourceTransactionManager> dsTxManagerStack, Stack<TransactionStatus> txStatusStack, TxManager myTxManager) {
         String[] txManagerNames = myTxManager.value();
         if (ArrayUtils.isEmpty(myTxManager.value())) {
             return false;

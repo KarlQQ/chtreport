@@ -1,6 +1,5 @@
 package ccbs.util.comm01;
 
-import ccbs.conf.base.RestTemplateConfig;
 import ccbs.dao.core.entity.CommOffice;
 import ccbs.model.batch.PersonalInfoMaskStr;
 import ccbs.model.online.OfficeInfoQueryIn;
@@ -36,14 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestTemplate;
-
 
 @Service
 @Slf4j
@@ -55,13 +49,13 @@ public class Comm01ServiceImpl implements Comm01Service {
   @Value("${ccbs.userInfoApiIv}") private String userInfoApiIv;
 
   @Autowired private CommOfficeService commOfficeService;
-  @Autowired private RestTemplateConfig restTemplateConfig;
+  // @Autowired private RestTemplateConfig restTemplateConfig;
 
   private final RestClient restClient;
 
   @Autowired
   public Comm01ServiceImpl(RestClient restClient) {
-      this.restClient = restClient;
+    this.restClient = restClient;
   }
 
   //        RQBP002_以證號辨別是否為自然人
@@ -371,12 +365,12 @@ public class Comm01ServiceImpl implements Comm01Service {
       log.debug("Authorization Value: " + authorizationValue);
 
       ResponseEntity<UserInfoQueryOut> response = restClient.post()
-          .uri(url)
-          .header("Authorization", authorizationValue)
-          .header("Content-Type", "application/json")
-          .body(userInfoQueryApiIn)
-          .retrieve()
-          .toEntity(UserInfoQueryOut.class);
+                                                      .uri(url)
+                                                      .header("Authorization", authorizationValue)
+                                                      .header("Content-Type", "application/json")
+                                                      .body(userInfoQueryApiIn)
+                                                      .retrieve()
+                                                      .toEntity(UserInfoQueryOut.class);
 
       log.debug("Response: " + response);
 
@@ -451,7 +445,7 @@ public class Comm01ServiceImpl implements Comm01Service {
 
       // Convert encrypted bytes to Base64 for easier display
       String encryptedText = Base64.getEncoder().encodeToString(encryptedBytes);
-      String ivBase64 = Base64.getEncoder().encodeToString(ivBytes);
+      // String ivBase64 = Base64.getEncoder().encodeToString(ivBytes);
 
       // Print the results
       log.debug("encryptedText: " + encryptedBytes);

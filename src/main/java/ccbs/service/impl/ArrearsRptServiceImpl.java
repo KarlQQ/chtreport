@@ -3,12 +3,13 @@ package ccbs.service.impl;
 import static org.mybatis.dynamic.sql.SqlBuilder.isEqualTo;
 import static org.mybatis.dynamic.sql.SqlBuilder.select;
 
-import ccbs.conf.aop.RptLogExecution;
-import ccbs.conf.base.Bp01Config.Bp01f0013Config;
+import ccbs.conf.aop.RptLog;
+import ccbs.conf.aop.RptLogAspect.Result;
 import ccbs.dao.core.constants.DateTypeConstants;
 import ccbs.dao.core.entity.BillRels;
 import ccbs.dao.core.entity.EMPData;
 import ccbs.dao.core.entity.RptAccountSummary;
+import ccbs.dao.core.entity.RptBP222OTSummary;
 import ccbs.dao.core.entity.RptBP2230D4Summary;
 import ccbs.dao.core.entity.RptBP2230D5Summary;
 import ccbs.dao.core.entity.RptBP2230D6Summary;
@@ -20,16 +21,12 @@ import ccbs.dao.core.entity.RptBPGUSUBSummary;
 import ccbs.dao.core.entity.RptBPOWE2WSummary;
 import ccbs.dao.core.entity.RptBPOWESummary;
 import ccbs.dao.core.entity.RptBPZ10Summary;
-import ccbs.dao.core.entity.RptBP222OTSummary;
 import ccbs.dao.core.entity.RptBillMain;
 import ccbs.dao.core.mapper.BillRelsMapper;
 import ccbs.dao.core.mapper.RptAccountSummaryMapper;
 import ccbs.dao.core.mapper.RptBillMainMapper;
 import ccbs.dao.core.sql.BillRelsDynamicSqlSupport;
 import ccbs.dao.core.sql.RptBillMainDynamicSqlSupport;
-import ccbs.data.entity.QueryAllNameAddrOfBillHistoryInput;
-import ccbs.data.entity.QueryAllNameAddrOfBillHistoryOutput;
-import ccbs.data.entity.QueryAllNameAddrOfBillHistoryOutput.ListItem;
 import ccbs.model.batch.ArrearsFileLineInput;
 import ccbs.model.batch.BP221D6_ReportRowForm;
 import ccbs.model.batch.BPGNIDFileLineInput;
@@ -38,10 +35,12 @@ import ccbs.model.batch.BatchArrearsInputStr;
 import ccbs.model.batch.BatchSimpleRptInStr;
 import ccbs.model.batch.BatchSimpleRptInStrWithItemType;
 import ccbs.model.batch.BatchSimpleRptInStrWithOpid;
-import ccbs.model.batch.BatchSimpleRptInStrWithTaskMode;
 import ccbs.model.batch.BatchSimpleRptInStrWithType;
 import ccbs.model.batch.IdnoData;
 import ccbs.model.batch.PersonalInfoMaskStr;
+import ccbs.model.batch.QueryAllNameAddrOfBillHistoryInput;
+import ccbs.model.batch.QueryAllNameAddrOfBillHistoryOutput;
+import ccbs.model.batch.QueryAllNameAddrOfBillHistoryOutput.ListItem;
 import ccbs.model.batch.RptLogAfterExecuteInputStr;
 import ccbs.model.batch.RptLogAfterExecuteOutputStr;
 import ccbs.model.batch.RptLogBeforeExecuteInputStr;
@@ -53,15 +52,13 @@ import ccbs.model.batch.dData;
 import ccbs.model.online.OfficeInfoQueryIn;
 import ccbs.model.online.OfficeInfoQueryOut;
 import ccbs.service.intf.ArrearsService;
-import ccbs.service.intf.Bp01Service.Result;
 import ccbs.util.CsvGenerator;
-import ccbs.util.TxtGenerator;
 import ccbs.util.DateUtils;
 import ccbs.util.NameMapping;
 import ccbs.util.StringUtils;
+import ccbs.util.TxtGenerator;
 import ccbs.util.comm01.Comm01Service;
 import ccbs.util.comm01.Comm01ServiceImpl;
-import ccbs.util.comm02.Comm02Service;
 import ccbs.util.comm03.Comm03Service;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
@@ -75,7 +72,6 @@ import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.text.pdf.draw.LineSeparator;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -109,7 +105,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import org.mybatis.dynamic.sql.render.RenderingStrategies;
 import org.mybatis.dynamic.sql.select.render.SelectStatementProvider;
@@ -139,13 +134,13 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   @Value("${ccbs.zipFilePath}") private String zipFilePath;
 
   @Autowired private Comm03Service comm03Service;
-  @Autowired private Comm02Service comm02Service;
+  // @Autowired private Comm02Service comm02Service;
   @Autowired private Comm01Service comm01Service;
-  @Autowired private Bp01f0013Config config;
+  // @Autowired private Bp01f0013Config config;
 
-  private int inputFilesCnt = 0;
-  private int genRptOkFilesCnt = 0;
-  private int genRptFailFilesCnt = 0;
+  // private int inputFilesCnt = 0;
+  // private int genRptOkFilesCnt = 0;
+  // private int genRptFailFilesCnt = 0;
 
   // 字體路徑(正式)
 
@@ -167,7 +162,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         + " time: " + getCurrentDateTime());
     String inputBillIdno = input.getBillIdno();
     String inputSubMark = input.getGetSubMark();
-    Boolean dataSetFlg = false;
+    // Boolean dataSetFlg = false;
     SingleArrearsOutputStr singleArrearsOutputStr = new SingleArrearsOutputStr();
 
     try {
@@ -472,7 +467,6 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         log.debug("generateRpts masked end, "
             + " time: " + getCurrentDateTime());
 
-
         if (inputType.equals("2")) {
           generateTxt(input, arrearsInputStrs, genMaskReportFlg);
         }
@@ -673,7 +667,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     } else {
       rptLogAfterExecuteInputStr.setCreateCount(dDataListForLogAfterExecute.size());
     }
-    rptLogAfterExecuteInputStr.setErrorount(0);
+    rptLogAfterExecuteInputStr.setErrorCount(0);
     rptLogAfterExecuteInputStr.setParamIntValuse("");
     rptLogAfterExecuteInputStr.setParamExtValuse(fileName);
     rptLogAfterExecuteInputStr.setDDataSet(dDataListForLogAfterExecute);
@@ -684,11 +678,11 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     log.debug("COMM03_0002 end, "
         + " time: " + getCurrentDateTime());
     if (rptLogAfterExecuteOutputStr.getProcResult() != "00") {
-      inputFilesCnt++;
-      genRptFailFilesCnt++;
+      // inputFilesCnt++;
+      // genRptFailFilesCnt++;
     } else {
-      inputFilesCnt++;
-      genRptOkFilesCnt++;
+      // inputFilesCnt++;
+      // genRptOkFilesCnt++;
       return true;
     }
     return false;
@@ -718,17 +712,17 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     return dDataListOut;
   }
 
-  private BigDecimal getRptFileTotalAmt(List<SingleArrearsOutputStr> singleArrearsOutputStrs) {
-    BigDecimal totalAmt = new BigDecimal('0');
-    for (int i = 0; i < singleArrearsOutputStrs.size(); i++) {
-      for (int j = 0; j < singleArrearsOutputStrs.get(i).getIdnoDataSet().size(); j++) {
-        BigDecimal tmpAmt =
-            new BigDecimal(singleArrearsOutputStrs.get(i).getIdnoDataSet().get(j).getBillAmt());
-        totalAmt.add(tmpAmt);
-      }
-    }
-    return totalAmt;
-  }
+  // private BigDecimal getRptFileTotalAmt(List<SingleArrearsOutputStr> singleArrearsOutputStrs) {
+  //   BigDecimal totalAmt = new BigDecimal('0');
+  //   for (int i = 0; i < singleArrearsOutputStrs.size(); i++) {
+  //     for (int j = 0; j < singleArrearsOutputStrs.get(i).getIdnoDataSet().size(); j++) {
+  //       BigDecimal tmpAmt =
+  //           new BigDecimal(singleArrearsOutputStrs.get(i).getIdnoDataSet().get(j).getBillAmt());
+  //       totalAmt.add(tmpAmt);
+  //     }
+  //   }
+  //   return totalAmt;
+  // }
 
   private dData generateCsv(List<BPGUSUB_ReportRowForm> rows, String fileNameWithoutExtension,
       boolean genSecretReportFlg, boolean naturalIncludeFlg) {
@@ -813,15 +807,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   }
 
   private void generateTxt(BatchArrearsInputStr input, List<SingleArrearsInputStr> arrearsInputStrs,
-    boolean genSecretReportFlg) {
+      boolean genSecretReportFlg) {
     try {
-        
-      String isRerun = input.getIsRerun();
-      String jobId = input.getJobid();
-      String inputType = input.getInputType();
+      // String isRerun = input.getIsRerun();
+      // String jobId = input.getJobid();
+      // String inputType = input.getInputType();
       String inputItem = input.getInputItem();
       String opcDate = input.getOpcDate();
-      String rocDate = DateUtils.convertToRocDate(opcDate);
+      // String rocDate = DateUtils.convertToRocDate(opcDate);
 
       String txtFileName;
       if (genSecretReportFlg) {
@@ -844,8 +837,9 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
       if (billIdnoStr != null && !billIdnoStr.isEmpty()) {
         TxtGenerator txtGenerator = new TxtGenerator(txtFileAbsolutePath);
-        
-        List<RptBPGUSUBSummary> rptBPGUSUBSummaries = rptAccountSummaryMapper.selectBPGUSUBSummary(billIdnoStr, inputItem);
+
+        List<RptBPGUSUBSummary> rptBPGUSUBSummaries =
+            rptAccountSummaryMapper.selectBPGUSUBSummary(billIdnoStr, inputItem);
         for (RptBPGUSUBSummary summary : rptBPGUSUBSummaries) {
           String billIdno = summary.getBillIdno() != null ? (String) summary.getBillIdno() : "";
           String billMonth = summary.getBillMonth() != null ? (String) summary.getBillMonth() : "";
@@ -859,7 +853,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           if (genSecretReportFlg) {
             PersonalInfoMaskStr personalInfoMaskStrIn = new PersonalInfoMaskStr();
             personalInfoMaskStrIn.setMaskIDNumber(billIdno);
-            PersonalInfoMaskStr personalInfoMaskStrOut = Comm01ServiceImpl.COMM01_0002(personalInfoMaskStrIn);
+            PersonalInfoMaskStr personalInfoMaskStrOut =
+                Comm01ServiceImpl.COMM01_0002(personalInfoMaskStrIn);
             billIdno = personalInfoMaskStrOut.getMaskIDNumber();
           }
 
@@ -879,7 +874,6 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     } catch (Exception e) {
       e.printStackTrace();
     }
-
   }
 
   private String getRocDate(String inputDate) {
@@ -1316,12 +1310,12 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
         BPGUSUB_ReportRowForm previousRow = new BPGUSUB_ReportRowForm();
         ; // 前一筆data
-        BPGUSUB_ReportRowForm nextRow = new BPGUSUB_ReportRowForm();
+        // BPGUSUB_ReportRowForm nextRow = new BPGUSUB_ReportRowForm();
         if (i > 0) {
           previousRow = bpgusub_reportRowForms.get(i - 1);
         }
         if (bpgusub_reportRowForms.size() > 1 && i < bpgusub_reportRowForms.size() - 1) {
-          nextRow = bpgusub_reportRowForms.get(i + 1); // 後一筆資料
+          // nextRow = bpgusub_reportRowForms.get(i + 1); // 後一筆資料
         }
         // if (i < bpgusub_reportRowForms.size() - 1) {
         // nextRow = bpgusub_reportRowForms.get(i + 1);
@@ -1421,10 +1415,10 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   }
 
   @Override
-  @RptLogExecution(rptCode = "BP221D6")
+  @RptLog(rptCode = "BP221D6")
   public Result batchBP221D6Rpt(BatchSimpleRptInStr input) {
     String rptCode = "BP221D6";
-    String rptLogsId = null;
+    // String rptLogsId = null;
     String jobId = input.getJobId();
     String opcDate = input.getOpcDate();
     String rocDate = DateUtils.convertToRocDate(opcDate);
@@ -1439,7 +1433,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     List<String> outputFiles = new ArrayList<>();
     String[] offTypes = {"A", "B", "C", "D"};
     for (String offType : offTypes) {
-      String errorMessage = "";
+      // String errorMessage = "";
 
       List<RptAccountSummary> aAccountSummaries = null;
       List<RptAccountSummary> bAccountSummaries = null;
@@ -1919,7 +1913,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       } catch (IOException e) {
         errorCount++;
         log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
-        errorMessage = e.getMessage();
+        // errorMessage = e.getMessage();
       }
 
       outputFiles.add(csvFileAbsolutePath);
@@ -1941,7 +1935,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     } else {
       officeInfoQueryIn.setTransType("A");
     }
-    
+
     OfficeInfoQueryOut officeInfoQueryOut = comm01Service.COMM01_0003(officeInfoQueryIn);
     return officeInfoQueryOut.getResultOfficeCN() != null
         ? officeInfoQueryOut.getResultOfficeCN().trim()
@@ -1949,12 +1943,12 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   }
 
   @Override
-  @RptLogExecution(rptCode = "BP2240D1")
+  @RptLog(rptCode = "BP2240D1")
   public Result batchBP2240D1Rpt(BatchSimpleRptInStr input) throws Exception {
     String rptCode = "BP2240D1";
     String jobId = input.getJobId();
     String opcDate = input.getOpcDate();
-    String rocDate = DateUtils.convertToRocDate(opcDate);
+    // String rocDate = DateUtils.convertToRocDate(opcDate);
     String opcYYYMM = input.getOpcYearMonth();
     String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
     String isRerun = input.getIsRerun();
@@ -2096,15 +2090,15 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   }
 
   @Override
-  @RptLogExecution(rptCode = "BP2230D4")
+  @RptLog(rptCode = "BP2230D4")
   public Result batchBP2230D4D5Rpt(BatchSimpleRptInStr input) throws Exception {
     String rptCode = "BP2230D4";
     String isRerun = input.getIsRerun();
     String jobId = input.getJobId();
-    String opcDate = input.getOpcDate();
-    String rocDate = DateUtils.convertToRocDate(opcDate);
-    String opcYYYMM = input.getOpcYearMonth();
-    String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
+    // String opcDate = input.getOpcDate();
+    // String rocDate = DateUtils.convertToRocDate(opcDate);
+    // String opcYYYMM = input.getOpcYearMonth();
+    // String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
     Integer createCount = 0;
     Integer errorCount = 0;
     List<dData> dDataList = new ArrayList<>();
@@ -2133,13 +2127,13 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
   @Override
   public dData batchBP2230D4Rpt(BatchSimpleRptInStr input) throws Exception {
-    String rptCode = "BP2230D4";
-    String jobId = input.getJobId();
+    // String rptCode = "BP2230D4";
+    // String jobId = input.getJobId();
     String opcDate = input.getOpcDate();
     String rocDate = DateUtils.convertToRocDate(opcDate);
     String opcYYYMM = input.getOpcYearMonth();
     String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
-    String isRerun = input.getIsRerun();
+    // String isRerun = input.getIsRerun();
 
     List<RptBP2230D4Summary> rptBP2230D4Summaries =
         rptAccountSummaryMapper.selectBP2230D4Summary(opcYYYMM);
@@ -2302,13 +2296,13 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
   @Override
   public dData batchBP2230D5Rpt(BatchSimpleRptInStr input) throws Exception {
-    String rptCode = "BP2230D4";
-    String jobId = input.getJobId();
+    // String rptCode = "BP2230D4";
+    // String jobId = input.getJobId();
     String opcDate = input.getOpcDate();
     String rocDate = DateUtils.convertToRocDate(opcDate);
     String opcYYYMM = input.getOpcYearMonth();
     String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
-    String isRerun = input.getIsRerun();
+    // String isRerun = input.getIsRerun();
 
     List<RptBP2230D5Summary> rptBP2230D5Summaries =
         rptAccountSummaryMapper.selectBP2230D5Summary(opcYYYMM);
@@ -2439,7 +2433,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   }
 
   @Override
-  @RptLogExecution(rptCode = "BP2230D6")
+  @RptLog(rptCode = "BP2230D6")
   public Result batchBP2230D6Rpt(BatchSimpleRptInStr input) throws Exception {
     String rptCode = "BP2230D6";
     String jobId = input.getJobId();
@@ -2584,20 +2578,21 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   }
 
   @Override
-  @RptLogExecution(rptCode = "BP222OT")
+  @RptLog(rptCode = "BP222OT")
   public Result batchBP222OTRpt(BatchSimpleRptInStr input) throws Exception {
     String rptCode = "BP222OT";
     String isRerun = input.getIsRerun();
     String jobId = input.getJobId();
     String opcDate = input.getOpcDate();
-    String rocDate = DateUtils.convertToRocDate(opcDate);
+    // String rocDate = DateUtils.convertToRocDate(opcDate);
     String opcYYYMM = input.getOpcYearMonth();
     String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
     Integer errorCount = 0;
 
     List<dData> dDataList = new ArrayList<>();
 
-    List<RptBP222OTSummary> rptBP222OTSummaries = rptAccountSummaryMapper.selectBP222OTSummary(opcYYYMM, "1");
+    List<RptBP222OTSummary> rptBP222OTSummaries =
+        rptAccountSummaryMapper.selectBP222OTSummary(opcYYYMM, "1");
 
     String csvFileName = "BP222OT_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
@@ -2626,14 +2621,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       csvGenerator.save();
 
       dDataList.add(dData.builder()
-          .rptFileName(csvFileName)
-          .rptTimes("3")
-          .billMonth(rocYYYMM)
-          .rptDate(opcDate)
-          .rptFileCount(rptBP222OTSummaries.size())
-          .rptFileAmt(totalSumBillItemAmt)
-          .rptSecretMark("N")
-          .build());
+                        .rptFileName(csvFileName)
+                        .rptTimes("3")
+                        .billMonth(rocYYYMM)
+                        .rptDate(opcDate)
+                        .rptFileCount(rptBP222OTSummaries.size())
+                        .rptFileAmt(totalSumBillItemAmt)
+                        .rptSecretMark("N")
+                        .build());
     } catch (Exception e) {
       // 處理例外情況
       log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
@@ -2645,17 +2640,17 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BP222OT2")
+  @RptLog(rptCode = "BP222OT2")
   public Result batchBP222OT2Rpt(BatchSimpleRptInStr input) throws Exception {
     String rptCode = "BP222OT2";
     String jobId = input.getJobId();
     String opcDate = input.getOpcDate();
-    String rocDate = DateUtils.convertToRocDate(opcDate);
+    // String rocDate = DateUtils.convertToRocDate(opcDate);
     String opcYYYMM = input.getOpcYearMonth();
     String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
     String isRerun = input.getIsRerun();
@@ -2663,7 +2658,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
     List<dData> dDataList = new ArrayList<>();
 
-    List<RptBP222OTSummary> rptBP222OTSummaries = rptAccountSummaryMapper.selectBP222OTSummary(opcYYYMM, "2");
+    List<RptBP222OTSummary> rptBP222OTSummaries =
+        rptAccountSummaryMapper.selectBP222OTSummary(opcYYYMM, "2");
 
     String csvFileName = "BP222OT2_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
@@ -2693,14 +2689,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       csvGenerator.save();
 
       dDataList.add(dData.builder()
-          .rptFileName(csvFileName)
-          .rptTimes("3")
-          .billMonth(rocYYYMM)
-          .rptDate(opcDate)
-          .rptFileCount(rptBP222OTSummaries.size())
-          .rptFileAmt(totalSumBillItemAmt)
-          .rptSecretMark("N")
-          .build());
+                        .rptFileName(csvFileName)
+                        .rptTimes("3")
+                        .billMonth(rocYYYMM)
+                        .rptDate(opcDate)
+                        .rptFileCount(rptBP222OTSummaries.size())
+                        .rptFileAmt(totalSumBillItemAmt)
+                        .rptSecretMark("N")
+                        .build());
     } catch (Exception e) {
       // 處理例外情況
       log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
@@ -2711,20 +2707,22 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
     // 獲取所有不同的 billOffBelong
     Set<String> distinctBillOffBelongs = rptBP222OTSummaries.stream()
-        .map(RptBP222OTSummary::getBillOffBelong)
-        .collect(Collectors.toSet());
+                                             .map(RptBP222OTSummary::getBillOffBelong)
+                                             .collect(Collectors.toSet());
 
     // 針對每個 billOffBelong 進行處理
     for (String billOffBelong : distinctBillOffBelongs) {
       try {
         // 過濾出當前 billOffBelong 的 summary
-        List<RptBP222OTSummary> summariesForBillOff = rptBP222OTSummaries.stream()
-            .filter(summary -> billOffBelong.equals(summary.getBillOffBelong()))
-            .collect(Collectors.toList());
+        List<RptBP222OTSummary> summariesForBillOff =
+            rptBP222OTSummaries.stream()
+                .filter(summary -> billOffBelong.equals(summary.getBillOffBelong()))
+                .collect(Collectors.toList());
 
         String csvOffFileName = String.format(csvOffFileNameTemplate, billOffBelong);
         String csvOffFileAbsolutePathWithBelong = csvFilePath + csvOffFileName;
-        CsvGenerator csvGeneratorWithBelong = new CsvGenerator(csvOffFileAbsolutePathWithBelong, 5, ",");
+        CsvGenerator csvGeneratorWithBelong =
+            new CsvGenerator(csvOffFileAbsolutePathWithBelong, 5, ",");
         csvGeneratorWithBelong.writeData(0, header01);
 
         BigDecimal totalSumBillItemAmt = BigDecimal.ZERO;
@@ -2746,15 +2744,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         csvGeneratorWithBelong.save();
 
         dDataList.add(dData.builder()
-            .rptFileName(csvOffFileName)
-            .rptTimes("3")
-            .billOff(billOffBelong)
-            .billMonth(rocYYYMM)
-            .rptDate(opcDate)
-            .rptFileCount(summariesForBillOff.size())
-            .rptFileAmt(totalSumBillItemAmt)
-            .rptSecretMark("N")
-            .build());
+                          .rptFileName(csvOffFileNameTemplate)
+                          .rptTimes("3")
+                          .billMonth(rocYYYMM)
+                          .rptDate(opcDate)
+                          .rptFileCount(summariesForBillOff.size())
+                          .rptFileAmt(totalSumBillItemAmt)
+                          .rptSecretMark("N")
+                          .build());
 
       } catch (Exception e) {
         // 處理例外情況
@@ -2768,25 +2765,26 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BP22TOT")
+  @RptLog(rptCode = "BP22TOT")
   public Result batchBP22TOTRpt(BatchSimpleRptInStr input) throws Exception {
     String rptCode = "BP22TOT";
     String isRerun = input.getIsRerun();
     String jobId = input.getJobId();
     String opcDate = input.getOpcDate();
-    String rocDate = DateUtils.convertToRocDate(opcDate);
+    // String rocDate = DateUtils.convertToRocDate(opcDate);
     String opcYYYMM = input.getOpcYearMonth();
     String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
     Integer errorCount = 0;
 
     List<dData> dDataList = new ArrayList<>();
 
-    List<RptBP22TOTSummary> rptBP22TOTSummaries = rptAccountSummaryMapper.selectBP22TOTSummary(opcYYYMM);
+    List<RptBP22TOTSummary> rptBP22TOTSummaries =
+        rptAccountSummaryMapper.selectBP22TOTSummary(opcYYYMM);
 
     String csvFileName = "BP22TOT_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
@@ -2795,7 +2793,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       // 建立 CsvGenerator 物件
       CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 5, ",");
 
-      List<String> header01 = Arrays.asList("出帳年月", "營運處", "會計科目", "細項", "檔上欠費金額");
+      List<String> header01 =
+          Arrays.asList("出帳年月", "營運處", "會計科目", "細項", "檔上欠費金額");
       csvGenerator.writeData(0, header01);
       BigDecimal totalSumBillItemAmt = BigDecimal.ZERO;
 
@@ -2821,14 +2820,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       csvGenerator.save();
 
       dDataList.add(dData.builder()
-          .rptFileName(csvFileName)
-          .rptTimes("3")
-          .billMonth(rocYYYMM)
-          .rptDate(opcDate)
-          .rptFileCount(rptBP22TOTSummaries.size())
-          .rptFileAmt(totalSumBillItemAmt)
-          .rptSecretMark("N")
-          .build());
+                        .rptFileName(csvFileName)
+                        .rptTimes("3")
+                        .billMonth(rocYYYMM)
+                        .rptDate(opcDate)
+                        .rptFileCount(rptBP22TOTSummaries.size())
+                        .rptFileAmt(totalSumBillItemAmt)
+                        .rptSecretMark("N")
+                        .build());
     } catch (Exception e) {
       // 處理例外情況
       log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
@@ -2840,12 +2839,12 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BPGNERP")
+  @RptLog(rptCode = "BPGNERP")
   public Result batchBPGNERPRpt(BatchSimpleRptInStrWithType input) throws Exception {
     String rptCode = "BPGNERP";
     String isRerun = input.getIsRerun();
@@ -2856,23 +2855,25 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     String opcYYYMM = input.getOpcYearMonth();
     String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
     Integer errorCount = 0;
-    String mask = "Mask";
+    // String mask = "Mask";
 
     List<dData> dDataList = new ArrayList<>();
 
-    List<RptBPGNERPSummary> rptBPGNERPSummaries = rptAccountSummaryMapper.selectBPGNERPSummary(type3);
+    List<RptBPGNERPSummary> rptBPGNERPSummaries =
+        rptAccountSummaryMapper.selectBPGNERPSummary(type3);
 
     String csvFileName = "BPGNERP_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
 
-    String csvFileMaskName = "BPGNERP_T" + opcDate + "_" + mask + ".csv";
-    String csvFileMaskAbsolutePath = csvFilePath + csvFileName;
+    // String csvFileMaskName = "BPGNERP_T" + opcDate + "_" + mask + ".csv";
+    // String csvFileMaskAbsolutePath = csvFilePath + csvFileName;
 
     try {
       // 建立 CsvGenerator 物件
       CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 5, ",");
 
-      List<String> header01 = Arrays.asList("出帳設備號碼", "客戶名稱", "出帳證號", "出帳年月", "未繳金額");
+      List<String> header01 =
+          Arrays.asList("出帳設備號碼", "客戶名稱", "出帳證號", "出帳年月", "未繳金額");
       csvGenerator.writeData(0, header01);
 
       int fileCount = 0;
@@ -2896,12 +2897,12 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       csvGenerator.save();
 
       dDataList.add(dData.builder()
-          .rptFileName(csvFileName)
-          .rptTimes("3")
-          .billMonth(rocYYYMM)
-          .rptDate(opcDate)
-          .rptFileCount(fileCount)
-          .build());
+                        .rptFileName(csvFileName)
+                        .rptTimes("3")
+                        .billMonth(rocYYYMM)
+                        .rptDate(opcDate)
+                        .rptFileCount(fileCount)
+                        .build());
     } catch (Exception e) {
       // 處理例外情況
       log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
@@ -2913,12 +2914,13 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
-  private QueryAllNameAddrOfBillHistoryOutput queryBillHistory(RptBPGNERPSummary summary, String rocDate) {
-    String[] companyDivisions = { "N", "C", "S", "A" };
+  private QueryAllNameAddrOfBillHistoryOutput queryBillHistory(
+      RptBPGNERPSummary summary, String rocDate) {
+    String[] companyDivisions = {"N", "C", "S", "A"};
     QueryAllNameAddrOfBillHistoryOutput queryOutput = null;
 
     for (String division : companyDivisions) {
@@ -2946,7 +2948,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       queryInput.setLoginDate(currentDate);
       queryInput.setLoginTime(currentTime);
 
-      if (queryOutput != null && queryOutput.getStatus() != null && queryOutput.getStatus() == "0") {
+      if (queryOutput != null && queryOutput.getStatus() != null
+          && queryOutput.getStatus() == "0") {
         // 如果 status = 0，表示成功有資料，退出循環
         break;
       } else {
@@ -2959,7 +2962,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   }
 
   @Override
-  @RptLogExecution(rptCode = "BPOWE2W")
+  @RptLog(rptCode = "BPOWE2W")
   public Result batchBPOWE2WRpt(BatchSimpleRptInStrWithOpid input) throws Exception {
     String rptCode = "BPOWE2W";
     String isRerun = input.getIsRerun();
@@ -2968,14 +2971,15 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     String inputOPID = input.getInputOPID();
     String inputSTATUS = input.getInputSTATUS();
     String opcDate = input.getOpcDate();
-    String rocDate = DateUtils.convertToRocDate(opcDate);
+    // String rocDate = DateUtils.convertToRocDate(opcDate);
     String opcYYYMM = input.getOpcYearMonth();
     String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
     Integer errorCount = 0;
 
     List<dData> dDataList = new ArrayList<>();
 
-    List<RptBPOWE2WSummary> rptBPOWE2WSummaries = rptAccountSummaryMapper.selectBPOWE2WSummary(opcYYYMM, keepCnt, inputOPID, inputSTATUS);
+    List<RptBPOWE2WSummary> rptBPOWE2WSummaries =
+        rptAccountSummaryMapper.selectBPOWE2WSummary(opcYYYMM, keepCnt, inputOPID, inputSTATUS);
 
     String csvFileName = "BPOWE2W_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
@@ -2984,7 +2988,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       // 建立 CsvGenerator 物件
       CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 7, ",");
 
-      List<String> header01 = Arrays.asList("序號", "營運處", "機構代號", "設備號碼", "證號", "拆機日", "欠費總金額");
+      List<String> header01 =
+          Arrays.asList("序號", "營運處", "機構代號", "設備號碼", "證號", "拆機日", "欠費總金額");
       csvGenerator.writeData(0, header01);
       BigDecimal totalSumBillItemAmt = BigDecimal.ZERO;
 
@@ -3005,14 +3010,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       csvGenerator.save();
 
       dDataList.add(dData.builder()
-          .rptFileName(csvFileName)
-          .rptTimes("3")
-          .billMonth(rocYYYMM)
-          .rptDate(opcDate)
-          .rptFileCount(rptBPOWE2WSummaries.size())
-          .rptFileAmt(totalSumBillItemAmt)
-          .rptSecretMark("N")
-          .build());
+                        .rptFileName(csvFileName)
+                        .rptTimes("3")
+                        .billMonth(rocYYYMM)
+                        .rptDate(opcDate)
+                        .rptFileCount(rptBPOWE2WSummaries.size())
+                        .rptFileAmt(totalSumBillItemAmt)
+                        .rptSecretMark("N")
+                        .build());
     } catch (Exception e) {
       // 處理例外情況
       log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
@@ -3024,12 +3029,12 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BPOWE")
+  @RptLog(rptCode = "BPOWE")
   public Result batchBPOWERpt(BatchSimpleRptInStrWithOpid input) throws Exception {
     String rptCode = "BPOWE";
     String isRerun = input.getIsRerun();
@@ -3038,14 +3043,15 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     String inputOPID = input.getInputOPID();
     String inputSTATUS = input.getInputSTATUS();
     String opcDate = input.getOpcDate();
-    String rocDate = DateUtils.convertToRocDate(opcDate);
+    // String rocDate = DateUtils.convertToRocDate(opcDate);
     String opcYYYMM = input.getOpcYearMonth();
     String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
     Integer errorCount = 0;
 
     List<dData> dDataList = new ArrayList<>();
 
-    List<RptBPOWESummary> rptBPOWESummaries = rptAccountSummaryMapper.selectBPOWESummary(opcYYYMM, keepCnt, inputOPID, inputSTATUS);
+    List<RptBPOWESummary> rptBPOWESummaries =
+        rptAccountSummaryMapper.selectBPOWESummary(opcYYYMM, keepCnt, inputOPID, inputSTATUS);
 
     String csvFileName = "BPOWE_T" + opcDate + ".csv";
     String csvFileAbsolutePath = csvFilePath + csvFileName;
@@ -3054,7 +3060,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       // 建立 CsvGenerator 物件
       CsvGenerator csvGenerator = new CsvGenerator(csvFileAbsolutePath, 9, ",");
 
-      List<String> header01 = Arrays.asList("序號", "營運處", "機構代號", "設備號碼", "證號", "出帳年月", "帳單別", "拆機日", "欠費金額");
+      List<String> header01 = Arrays.asList("序號", "營運處", "機構代號", "設備號碼", "證號",
+          "出帳年月", "帳單別", "拆機日", "欠費金額");
       csvGenerator.writeData(0, header01);
       BigDecimal totalSumBillItemAmt = BigDecimal.ZERO;
 
@@ -3077,14 +3084,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       csvGenerator.save();
 
       dDataList.add(dData.builder()
-          .rptFileName(csvFileName)
-          .rptTimes("3")
-          .billMonth(rocYYYMM)
-          .rptDate(opcDate)
-          .rptFileCount(rptBPOWESummaries.size())
-          .rptFileAmt(totalSumBillItemAmt)
-          .rptSecretMark("N")
-          .build());
+                        .rptFileName(csvFileName)
+                        .rptTimes("3")
+                        .billMonth(rocYYYMM)
+                        .rptDate(opcDate)
+                        .rptFileCount(rptBPOWESummaries.size())
+                        .rptFileAmt(totalSumBillItemAmt)
+                        .rptSecretMark("N")
+                        .build());
     } catch (Exception e) {
       // 處理例外情況
       log.error("Error writing CSV file: " + csvFileAbsolutePath, e);
@@ -3096,13 +3103,13 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  @RptLogExecution(rptCode = "BPZ10")
+  @RptLog(rptCode = "BPZ10")
   public Result batchBPZ10Rpt(BatchSimpleRptInStrWithItemType input) throws Exception {
     String rptCode = "BPZ10";
     String isRerun = input.getIsRerun();
@@ -3116,78 +3123,69 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
     List<dData> dDataList = new ArrayList<>();
 
-    List<RptBPZ10Summary> rptBPZ10Summaries = rptAccountSummaryMapper.selectBPZ10Summary(opcYYYMM, itemType);
+    List<RptBPZ10Summary> rptBPZ10Summaries =
+        rptAccountSummaryMapper.selectBPZ10Summary(opcYYYMM, itemType);
 
     String titleName = null;
 
     Map<String, List<Map<String, Object>>> groupedData = new HashMap<>();
 
     for (RptBPZ10Summary summary : rptBPZ10Summaries) {
-        String billOffBelong = summary.getBillOffBelong();
-        String uniqueKey = String.join("_",
-            summary.getBillOff(),
-            summary.getBillTel(),
-            summary.getBillSubOff(),
-            summary.getBillSubTel(),
-            summary.getBillMonth()
-        );
+      String billOffBelong = summary.getBillOffBelong();
+      String uniqueKey = String.join("_", summary.getBillOff(), summary.getBillTel(),
+          summary.getBillSubOff(), summary.getBillSubTel(), summary.getBillMonth());
 
-        if (titleName == null) {
-            titleName = summary.getBillItemName();
+      if (titleName == null) {
+        titleName = summary.getBillItemName();
+      }
+
+      // Initialize the list for each billOffBelong if not already present
+      groupedData.computeIfAbsent(billOffBelong, k -> new ArrayList<>());
+
+      // Check if the uniqueKey already exists in the list for this billOffBelong
+      boolean exists = false;
+      for (Map<String, Object> dataMap : groupedData.get(billOffBelong)) {
+        String existingKey = String.join("_", (String) dataMap.get("billOff"),
+            (String) dataMap.get("billTel"), (String) dataMap.get("billSubOff"),
+            (String) dataMap.get("billSubTel"), (String) dataMap.get("billMonth"));
+        if (existingKey.equals(uniqueKey)) {
+          exists = true;
+          List<Map<String, Object>> items = (List<Map<String, Object>>) dataMap.get("items");
+          Map<String, Object> item = new HashMap<>();
+          item.put("itemCode", summary.getBillItemCode());
+          item.put("itemAmt", summary.getBillItemAmt());
+          items.add(item);
+          break;
         }
+      }
 
-        // Initialize the list for each billOffBelong if not already present
-        groupedData.computeIfAbsent(billOffBelong, k -> new ArrayList<>());
+      // If the uniqueKey does not exist, create a new entry
+      if (!exists) {
+        Map<String, Object> dataMap = new HashMap<>();
+        dataMap.put("billOff", summary.getBillOff());
+        dataMap.put("billTel", summary.getBillTel());
+        dataMap.put("billSubOff", summary.getBillSubOff());
+        dataMap.put("billSubTel", summary.getBillSubTel());
+        dataMap.put("billMonth", summary.getBillMonth());
+        dataMap.put("billAmt", summary.getBillAmt());
+        dataMap.put("items", new ArrayList<Map<String, Object>>());
 
-        // Check if the uniqueKey already exists in the list for this billOffBelong
-        boolean exists = false;
-        for (Map<String, Object> dataMap : groupedData.get(billOffBelong)) {
-            String existingKey = String.join("_",
-                (String) dataMap.get("billOff"),
-                (String) dataMap.get("billTel"),
-                (String) dataMap.get("billSubOff"),
-                (String) dataMap.get("billSubTel"),
-                (String) dataMap.get("billMonth")
-            );
-            if (existingKey.equals(uniqueKey)) {
-                exists = true;
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> items = (List<Map<String, Object>>) dataMap.get("items");
-                Map<String, Object> item = new HashMap<>();
-                item.put("itemCode", summary.getBillItemCode());
-                item.put("itemAmt", summary.getBillItemAmt());
-                items.add(item);
-                break;
-            }
-        }
+        Map<String, Object> item = new HashMap<>();
+        item.put("itemCode", summary.getBillItemCode());
+        item.put("itemAmt", summary.getBillItemAmt());
+        ((List<Map<String, Object>>) dataMap.get("items")).add(item);
 
-        // If the uniqueKey does not exist, create a new entry
-        if (!exists) {
-            Map<String, Object> dataMap = new HashMap<>();
-            dataMap.put("billOff", summary.getBillOff());
-            dataMap.put("billTel", summary.getBillTel());
-            dataMap.put("billSubOff", summary.getBillSubOff());
-            dataMap.put("billSubTel", summary.getBillSubTel());
-            dataMap.put("billMonth", summary.getBillMonth());
-            dataMap.put("billAmt", summary.getBillAmt());
-            dataMap.put("items", new ArrayList<Map<String, Object>>());
-
-            Map<String, Object> item = new HashMap<>();
-            item.put("itemCode", summary.getBillItemCode());
-            item.put("itemAmt", summary.getBillItemAmt());
-            ((List<Map<String, Object>>) dataMap.get("items")).add(item);
-
-            groupedData.get(billOffBelong).add(dataMap);
-        }
+        groupedData.get(billOffBelong).add(dataMap);
+      }
     }
 
     // Iterate over groupedData
     for (String billOffBelong : groupedData.keySet()) {
-        System.out.println("Bill Off Belong: " + billOffBelong);
-        for (Map<String, Object> dataMap : groupedData.get(billOffBelong)) {
-            System.out.println("Data: " + dataMap);
-            // You can further process each dataMap here
-        }
+      System.out.println("Bill Off Belong: " + billOffBelong);
+      for (Map<String, Object> dataMap : groupedData.get(billOffBelong)) {
+        System.out.println("Data: " + dataMap);
+        // You can further process each dataMap here
+      }
     }
 
     String txtFileName = "BPZ10_T" + opcDate + ".TXT";
@@ -3212,11 +3210,13 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       Integer lastIndex = 72;
       txtGenerator.writeValue(67, lastIndex, "總金額");
 
-      int maxItemsSize = groupedData.values().stream()
-          .flatMap(List::stream)
-          .mapToInt(dataMap -> ((List<Map<String, Object>>) dataMap.get("items")).size())
-          .max()
-          .orElse(0);
+      int maxItemsSize =
+          groupedData.values()
+              .stream()
+              .flatMap(List::stream)
+              .mapToInt(dataMap -> ((List<Map<String, Object>>) dataMap.get("items")).size())
+              .max()
+              .orElse(0);
 
       for (int i = 0; i < maxItemsSize; i++) {
         txtGenerator.writeValue(lastIndex + 3, lastIndex + 10, "費用代號");
@@ -3225,14 +3225,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         lastIndex = lastIndex + 8;
       }
       txtGenerator.nextRow();
-      
+
       Integer rowCount = 0;
 
       BigDecimal grandTotalBillAmtNumber = BigDecimal.ZERO;
       Map<String, BigDecimal> grandTotalItemAmts = new LinkedHashMap<>();
 
       for (Map.Entry<String, List<Map<String, Object>>> entry : groupedData.entrySet()) {
-        String billOffBelong = entry.getKey();
+        // String billOffBelong = entry.getKey();
         List<Map<String, Object>> dataMaps = entry.getValue();
 
         BigDecimal totalBillAmtNumber = BigDecimal.ZERO;
@@ -3259,7 +3259,6 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           lastIndex = 72;
           txtGenerator.writeValue(67, lastIndex, billAmt);
 
-          @SuppressWarnings("unchecked")
           List<Map<String, Object>> items = (List<Map<String, Object>>) dataMap.get("items");
           for (Map<String, Object> item : items) {
             String itemCode = (String) item.get("itemCode");
@@ -3267,7 +3266,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
             String itemAmt = StringUtils.formatNumberWithCommasWithoutQuotes(itemAmtNumber);
 
             // 累加 itemAmtNumber
-            totalItemAmts.put(itemCode, totalItemAmts.getOrDefault(itemCode, BigDecimal.ZERO).add(itemAmtNumber));
+            totalItemAmts.put(
+                itemCode, totalItemAmts.getOrDefault(itemCode, BigDecimal.ZERO).add(itemAmtNumber));
 
             txtGenerator.writeValue(lastIndex + 7, lastIndex + 10, itemCode);
             lastIndex = lastIndex + 10;
@@ -3279,12 +3279,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
         // 輸出總計行
         txtGenerator.writeValueCentered(1, 4, "小記");
-        txtGenerator.writeValue(67, 72, StringUtils.formatNumberWithCommasWithoutQuotes(totalBillAmtNumber));
+        txtGenerator.writeValue(
+            67, 72, StringUtils.formatNumberWithCommasWithoutQuotes(totalBillAmtNumber));
         lastIndex = 72;
         for (Map.Entry<String, BigDecimal> totalItem : totalItemAmts.entrySet()) {
           txtGenerator.writeValue(lastIndex + 7, lastIndex + 10, totalItem.getKey());
           lastIndex = lastIndex + 10;
-          txtGenerator.writeValue(lastIndex + 3, lastIndex + 8, StringUtils.formatNumberWithCommasWithoutQuotes(totalItem.getValue()));
+          txtGenerator.writeValue(lastIndex + 3, lastIndex + 8,
+              StringUtils.formatNumberWithCommasWithoutQuotes(totalItem.getValue()));
           lastIndex = lastIndex + 8;
         }
         txtGenerator.nextRow();
@@ -3292,18 +3294,22 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         // 累加到總計
         grandTotalBillAmtNumber = grandTotalBillAmtNumber.add(totalBillAmtNumber);
         for (Map.Entry<String, BigDecimal> totalItem : totalItemAmts.entrySet()) {
-          grandTotalItemAmts.put(totalItem.getKey(), grandTotalItemAmts.getOrDefault(totalItem.getKey(), BigDecimal.ZERO).add(totalItem.getValue()));
+          grandTotalItemAmts.put(totalItem.getKey(),
+              grandTotalItemAmts.getOrDefault(totalItem.getKey(), BigDecimal.ZERO)
+                  .add(totalItem.getValue()));
         }
       }
 
       // 輸出總計行
       txtGenerator.writeValueCentered(1, 4, "合計");
-      txtGenerator.writeValue(67, 72, StringUtils.formatNumberWithCommasWithoutQuotes(grandTotalBillAmtNumber));
+      txtGenerator.writeValue(
+          67, 72, StringUtils.formatNumberWithCommasWithoutQuotes(grandTotalBillAmtNumber));
       lastIndex = 72;
       for (Map.Entry<String, BigDecimal> grandTotalItem : grandTotalItemAmts.entrySet()) {
         txtGenerator.writeValue(lastIndex + 7, lastIndex + 10, grandTotalItem.getKey());
         lastIndex = lastIndex + 10;
-        txtGenerator.writeValue(lastIndex + 3, lastIndex + 8, StringUtils.formatNumberWithCommasWithoutQuotes(grandTotalItem.getValue()));
+        txtGenerator.writeValue(lastIndex + 3, lastIndex + 8,
+            StringUtils.formatNumberWithCommasWithoutQuotes(grandTotalItem.getValue()));
         lastIndex = lastIndex + 8;
       }
       txtGenerator.nextRow();
@@ -3312,14 +3318,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       txtGenerator.save();
 
       dDataList.add(dData.builder()
-          .rptFileName(txtFileName)
-          .rptTimes("3")
-          .billMonth(rocYYYMM)
-          .rptDate(opcDate)
-          .rptFileCount(rowCount)
-          .rptFileAmt(grandTotalBillAmtNumber)
-          .rptSecretMark("N")
-          .build());
+                        .rptFileName(txtFileName)
+                        .rptTimes("3")
+                        .billMonth(rocYYYMM)
+                        .rptDate(opcDate)
+                        .rptFileCount(rowCount)
+                        .rptFileAmt(grandTotalBillAmtNumber)
+                        .rptSecretMark("N")
+                        .build());
     } catch (Exception e) {
       // 處理例外情況
       log.error("Error writing TXT file: " + txtFileAbsolutePath, e);
@@ -3331,22 +3337,24 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BPGNIDDA")
-  public Result batchBPGNIDDARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+  @RptLog(rptCode = "BPGNIDDA")
+  public Result batchBPGNIDDARpt(String inputFileName, String opcYYYMM, String outputDate,
+      String opcDate, String isRerun, String jobId) throws Exception {
     String rptCode = "BPGNIDDA";
 
     Integer errorCount = 0;
     List<dData> dDataList = new ArrayList<>();
     try {
-        dDataList = batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, false);
+      dDataList = batchBPGNIDRpt(
+          rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, false);
     } catch (Exception e) {
-        log.error("Error in batchBPGNIDRpt: ", e);
-        errorCount++;
+      log.error("Error in batchBPGNIDRpt: ", e);
+      errorCount++;
     }
 
     return Result.builder()
@@ -3354,22 +3362,24 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BPGNIDDC")
-  public Result batchBPGNIDDCRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+  @RptLog(rptCode = "BPGNIDDC")
+  public Result batchBPGNIDDCRpt(String inputFileName, String opcYYYMM, String outputDate,
+      String opcDate, String isRerun, String jobId) throws Exception {
     String rptCode = "BPGNIDDC";
-    
+
     Integer errorCount = 0;
     List<dData> dDataList = new ArrayList<>();
     try {
-        dDataList.addAll(batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, false));
+      dDataList.addAll(batchBPGNIDRpt(
+          rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, false));
     } catch (Exception e) {
-        log.error("Error in batchBPGNIDRpt: ", e);
-        errorCount++;
+      log.error("Error in batchBPGNIDRpt: ", e);
+      errorCount++;
     }
 
     return Result.builder()
@@ -3377,22 +3387,24 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BPGNIDD2A")
-  public Result batchBPGNIDD2ARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+  @RptLog(rptCode = "BPGNIDD2A")
+  public Result batchBPGNIDD2ARpt(String inputFileName, String opcYYYMM, String outputDate,
+      String opcDate, String isRerun, String jobId) throws Exception {
     String rptCode = "BPGNIDD2A";
 
     Integer errorCount = 0;
     List<dData> dDataList = new ArrayList<>();
     try {
-        dDataList = batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, true);
+      dDataList = batchBPGNIDRpt(
+          rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, true);
     } catch (Exception e) {
-        log.error("Error in batchBPGNIDRpt: ", e);
-        errorCount++;
+      log.error("Error in batchBPGNIDRpt: ", e);
+      errorCount++;
     }
 
     return Result.builder()
@@ -3400,22 +3412,24 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BPGNIDD2C")
-  public Result batchBPGNIDD2CRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+  @RptLog(rptCode = "BPGNIDD2C")
+  public Result batchBPGNIDD2CRpt(String inputFileName, String opcYYYMM, String outputDate,
+      String opcDate, String isRerun, String jobId) throws Exception {
     String rptCode = "BPGNIDD2C";
-    
+
     Integer errorCount = 0;
     List<dData> dDataList = new ArrayList<>();
     try {
-        dDataList.addAll(batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, true));
+      dDataList.addAll(batchBPGNIDRpt(
+          rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, true));
     } catch (Exception e) {
-        log.error("Error in batchBPGNIDRpt: ", e);
-        errorCount++;
+      log.error("Error in batchBPGNIDRpt: ", e);
+      errorCount++;
     }
 
     return Result.builder()
@@ -3423,47 +3437,49 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BPGNIDMA")
-  public Result batchBPGNIDMARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+  @RptLog(rptCode = "BPGNIDMA")
+  public Result batchBPGNIDMARpt(String inputFileName, String opcYYYMM, String outputDate,
+      String opcDate, String isRerun, String jobId) throws Exception {
     String rptCode = "BPGNIDMA";
-    
+
     Integer errorCount = 0;
     List<dData> dDataList = new ArrayList<>();
     try {
-        dDataList = batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, false);
+      dDataList = batchBPGNIDRpt(
+          rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, false);
     } catch (Exception e) {
-        log.error("Error in batchBPGNIDRpt: ", e);
-        errorCount++;
+      log.error("Error in batchBPGNIDRpt: ", e);
+      errorCount++;
     }
-
-    
 
     return Result.builder()
         .rptCode(rptCode)
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BPGNIDMC")
-  public Result batchBPGNIDMCRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+  @RptLog(rptCode = "BPGNIDMC")
+  public Result batchBPGNIDMCRpt(String inputFileName, String opcYYYMM, String outputDate,
+      String opcDate, String isRerun, String jobId) throws Exception {
     String rptCode = "BPGNIDMC";
-    
+
     Integer errorCount = 0;
     List<dData> dDataList = new ArrayList<>();
     try {
-        dDataList.addAll(batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, false));
+      dDataList.addAll(batchBPGNIDRpt(
+          rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, false));
     } catch (Exception e) {
-        log.error("Error in batchBPGNIDRpt: ", e);
-        errorCount++;
+      log.error("Error in batchBPGNIDRpt: ", e);
+      errorCount++;
     }
 
     return Result.builder()
@@ -3471,22 +3487,24 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BPGNIDM2A")
-  public Result batchBPGNIDM2ARpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+  @RptLog(rptCode = "BPGNIDM2A")
+  public Result batchBPGNIDM2ARpt(String inputFileName, String opcYYYMM, String outputDate,
+      String opcDate, String isRerun, String jobId) throws Exception {
     String rptCode = "BPGNIDM2A";
 
     Integer errorCount = 0;
     List<dData> dDataList = new ArrayList<>();
     try {
-        dDataList = batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, true);
+      dDataList = batchBPGNIDRpt(
+          rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, false, true);
     } catch (Exception e) {
-        log.error("Error in batchBPGNIDRpt: ", e);
-        errorCount++;
+      log.error("Error in batchBPGNIDRpt: ", e);
+      errorCount++;
     }
 
     return Result.builder()
@@ -3494,22 +3512,24 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
   @Override
-  @RptLogExecution(rptCode = "BPGNIDM2C")
-  public Result batchBPGNIDM2CRpt(String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId) throws Exception {
+  @RptLog(rptCode = "BPGNIDM2C")
+  public Result batchBPGNIDM2CRpt(String inputFileName, String opcYYYMM, String outputDate,
+      String opcDate, String isRerun, String jobId) throws Exception {
     String rptCode = "BPGNIDM2C";
-    
+
     Integer errorCount = 0;
     List<dData> dDataList = new ArrayList<>();
     try {
-        dDataList.addAll(batchBPGNIDRpt(rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, true));
+      dDataList.addAll(batchBPGNIDRpt(
+          rptCode, inputFileName, opcYYYMM, outputDate, opcDate, isRerun, jobId, true, true));
     } catch (Exception e) {
-        log.error("Error in batchBPGNIDRpt: ", e);
-        errorCount++;
+      log.error("Error in batchBPGNIDRpt: ", e);
+      errorCount++;
     }
 
     return Result.builder()
@@ -3517,29 +3537,30 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         .isRerun(isRerun)
         .opBatchno(jobId)
         .dDataList(dDataList)
-        .errorount(errorCount)
+        .errorCount(errorCount)
         .build();
   }
 
-  public List<dData> batchBPGNIDRpt(String rptCode, String inputFileName, String opcYYYMM, String outputDate, String opcDate, String isRerun, String jobId, Boolean checkMask, Boolean isDetail) throws Exception {
+  public List<dData> batchBPGNIDRpt(String rptCode, String inputFileName, String opcYYYMM,
+      String outputDate, String opcDate, String isRerun, String jobId, Boolean checkMask,
+      Boolean isDetail) throws Exception {
     List<dData> dDataList = new ArrayList<>();
 
-    String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
+    // String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
     Integer errorCount = 0;
-    Integer fileCount = 0;
-    BigDecimal totalAmt = BigDecimal.ZERO;
+    // Integer fileCount = 0;
+    // BigDecimal totalAmt = BigDecimal.ZERO;
 
     List<BPGNIDFileLineInput> bpgnidFileLineInput = getBPGNIDFileInputInput(inputFileName);
 
     if (bpgnidFileLineInput == null) {
-        throw new IllegalArgumentException("input 檔案未找到: " + inputFileName);
+      throw new IllegalArgumentException("input 檔案未找到: " + inputFileName);
     }
 
-    bpgnidFileLineInput.sort(Comparator
-    .comparing(BPGNIDFileLineInput::getLbOffBelong)
-    .thenComparing(BPGNIDFileLineInput::getLbIdno)
-    .thenComparing(BPGNIDFileLineInput::getLbInstallDate)
-    .thenComparing(BPGNIDFileLineInput::getLbTel));
+    bpgnidFileLineInput.sort(Comparator.comparing(BPGNIDFileLineInput::getLbOffBelong)
+                                 .thenComparing(BPGNIDFileLineInput::getLbIdno)
+                                 .thenComparing(BPGNIDFileLineInput::getLbInstallDate)
+                                 .thenComparing(BPGNIDFileLineInput::getLbTel));
 
     Map<String, List<BPGNIDFileLineInput>> groupedByLbOff = new HashMap<>();
     Map<String, List<BPGNIDFileLineInput>> groupedByLbOffMask = new HashMap<>();
@@ -3547,12 +3568,12 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     for (BPGNIDFileLineInput lineInput : bpgnidFileLineInput) {
       String lbOff = lineInput.getLbOff();
 
-
       if (checkMask && Comm01ServiceImpl.COMM01_0001(lineInput.getLbIdno())) {
         PersonalInfoMaskStr personalInfoMaskStrIn = new PersonalInfoMaskStr();
         personalInfoMaskStrIn.setMaskIDNumber(lineInput.getLbIdno());
         personalInfoMaskStrIn.setMaskTelno(lineInput.getLbTel());
-        PersonalInfoMaskStr personalInfoMaskStrOut = Comm01ServiceImpl.COMM01_0002(personalInfoMaskStrIn);
+        PersonalInfoMaskStr personalInfoMaskStrOut =
+            Comm01ServiceImpl.COMM01_0002(personalInfoMaskStrIn);
         lineInput.setLbIdnoMask(personalInfoMaskStrOut.getMaskIDNumber());
         lineInput.setLbTelMask(personalInfoMaskStrOut.getMaskTelno());
 
@@ -3566,13 +3587,14 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         }
         groupedByLbOff.get(lbOff).add(lineInput);
       }
-      
     }
 
     try {
-      generatePDFReport(rptCode, outputDate, opcYYYMM, opcDate, groupedByLbOff, dDataList, false, isDetail);
+      generatePDFReport(
+          rptCode, outputDate, opcYYYMM, opcDate, groupedByLbOff, dDataList, false, isDetail);
       if (checkMask && groupedByLbOffMask.size() > 0) {
-        generatePDFReport(rptCode, outputDate, opcYYYMM, opcDate, groupedByLbOffMask, dDataList, true, isDetail);
+        generatePDFReport(
+            rptCode, outputDate, opcYYYMM, opcDate, groupedByLbOffMask, dDataList, true, isDetail);
       }
 
     } catch (Exception e) {
@@ -3583,7 +3605,6 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
     return dDataList;
   }
-
 
   private List<BPGNIDFileLineInput> getBPGNIDFileInputInput(String filename) {
     List<String> content = new ArrayList<>();
@@ -3642,8 +3663,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
   }
 
   private void generatePDFReport(String rptCode, String outputDate, String opcYYYMM, String opcDate,
-      Map<String, List<BPGNIDFileLineInput>> groupedByLbOff, List<dData> dDataList, Boolean isMask, Boolean isDetail) throws IOException, DocumentException {
-
+      Map<String, List<BPGNIDFileLineInput>> groupedByLbOff, List<dData> dDataList, Boolean isMask,
+      Boolean isDetail) throws IOException, DocumentException {
     String rocYYYMM = DateUtils.convertToRocYearMonth(opcYYYMM);
     BigDecimal totalAmt = BigDecimal.ZERO;
     for (Map.Entry<String, List<BPGNIDFileLineInput>> entry : groupedByLbOff.entrySet()) {
@@ -3680,9 +3701,11 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           String sumAmt = "0";
           String billIdno = lineInput.getLbIdno();
           if (billIdno != null && !billIdno.isEmpty()) {
-            RptBPGNIDSummary rptBPGNIDSummary = rptAccountSummaryMapper.selectBPGNIDSummary(opcYYYMM, billIdno);
+            RptBPGNIDSummary rptBPGNIDSummary =
+                rptAccountSummaryMapper.selectBPGNIDSummary(opcYYYMM, billIdno);
             if (rptBPGNIDSummary != null) {
-              sumAmt = StringUtils.formatNumberWithCommasWithoutQuotes(rptBPGNIDSummary.getTotalAmt());
+              sumAmt =
+                  StringUtils.formatNumberWithCommasWithoutQuotes(rptBPGNIDSummary.getTotalAmt());
             }
           }
 
@@ -3693,7 +3716,6 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           txtGenerator.nextRow();
 
         } else {
-
           String offBelongName = getOfficeName(lineInput.getLbOffBelong(), "C");
           if (cerrentOffBelongName == null || cerrentOffBelongName == offBelongName) {
             headerReady = false;
@@ -3703,7 +3725,8 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           // header
           if (!headerReady) {
             txtGenerator.writeValue(1, 10, rptCode, true);
-            txtGenerator.writeValue(100, 200, "中華電信北區分公司新裝設備所有人證號下逾期欠費金額報表", true);
+            txtGenerator.writeValue(
+                100, 200, "中華電信北區分公司新裝設備所有人證號下逾期欠費金額報表", true);
             txtGenerator.nextRow();
 
             txtGenerator.writeValue(1, 10, "報表日期：", true);
@@ -3738,16 +3761,18 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           } else {
             txtGenerator.writeValue(13, 24, lineInput.getLbTel());
           }
-          
+
           txtGenerator.writeValue(27, 33, lineInput.getLbInstallDate());
           txtGenerator.writeValue(42, 47, lineInput.getLbEmpId());
 
           String sumAmt = "0";
           String billIdno = lineInput.getLbIdno();
           if (billIdno != null && !billIdno.isEmpty()) {
-            RptBPGNIDSummary rptBPGNIDSummary = rptAccountSummaryMapper.selectBPGNIDSummary(opcYYYMM, billIdno);
+            RptBPGNIDSummary rptBPGNIDSummary =
+                rptAccountSummaryMapper.selectBPGNIDSummary(opcYYYMM, billIdno);
             if (rptBPGNIDSummary != null) {
-              sumAmt = StringUtils.formatNumberWithCommasWithoutQuotes(rptBPGNIDSummary.getTotalAmt());
+              sumAmt =
+                  StringUtils.formatNumberWithCommasWithoutQuotes(rptBPGNIDSummary.getTotalAmt());
             }
           }
 
@@ -3757,12 +3782,13 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           } else {
             txtGenerator.writeValue(67, 76, billIdno);
           }
-          
+
           txtGenerator.writeValue(79, 158, lineInput.getLbBillName());
 
           EMPData empData = rptAccountSummaryMapper.selectEMPData(lineInput.getLbEmpId());
           String cName = (empData != null && empData.getCName() != null) ? empData.getCName() : "";
-          String ouCode = (empData != null && empData.getOuCode() != null) ? empData.getOuCode() : "";
+          String ouCode =
+              (empData != null && empData.getOuCode() != null) ? empData.getOuCode() : "";
 
           txtGenerator.writeValue(161, 174, cName);
           txtGenerator.writeValue(177, 208, ouCode);
@@ -3780,21 +3806,21 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         }
       }
 
-      //txtGenerator.save();
+      // txtGenerator.save();
       String pdfFileName = txtFileName.replace(".TXT", ".PDF");
       String pdfFileAbsolutePath = csvFilePath + pdfFileName;
       txtGenerator.saveAsPdf(pdfFileAbsolutePath, txtFileName);
 
       dDataList.add(dData.builder()
-          .rptFileName(pdfFileName)
-          .rptTimes("3")
-          .billOff(lbOff)
-          .billMonth(rocYYYMM)
-          .rptDate(opcDate)
-          .rptFileCount(groupedByLbOff.size())
-          .rptFileAmt(totalAmt)
-          .rptSecretMark("N")
-          .build());
+                        .rptFileName(pdfFileName)
+                        .rptTimes("3")
+                        .billOff(lbOff)
+                        .billMonth(rocYYYMM)
+                        .rptDate(opcDate)
+                        .rptFileCount(groupedByLbOff.size())
+                        .rptFileAmt(totalAmt)
+                        .rptSecretMark("N")
+                        .build());
     }
   }
 }

@@ -27,6 +27,7 @@ public class OpenApiConfig {
      */
     @Bean
     public OpenAPI customOpenAPI() {
+        @SuppressWarnings("rawtypes")
         Schema mapSchema = ApiSchemaUtils.mapSchema(
                 // 第一層
                 new PairSchema(SchemaType.Object, "prop1", SampleVo.class, null),

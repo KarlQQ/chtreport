@@ -12,6 +12,7 @@ import lombok.ToString;
 public class PairSchema {
     private SchemaType schemaType;
     private String key;
+    @SuppressWarnings("rawtypes")
     private Class aClass;
     private PairSchema[] pairSchemas;
 }

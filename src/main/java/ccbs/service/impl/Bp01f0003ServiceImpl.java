@@ -1,6 +1,7 @@
 package ccbs.service.impl;
 
-import ccbs.conf.aop.RptLogExecution;
+import ccbs.conf.aop.RptLog;
+import ccbs.conf.aop.RptLogAspect.Result;
 import ccbs.conf.base.Bp01Config.Bp01f0003Config;
 import ccbs.conf.base.Bp01Config.TypeItem;
 import ccbs.data.repository.RptAccountRepository;
@@ -8,7 +9,6 @@ import ccbs.model.batch.dData;
 import ccbs.model.bp01.Bp01f0003DTO;
 import ccbs.model.online.OfficeInfoQueryIn;
 import ccbs.model.online.OfficeInfoQueryOut;
-import ccbs.service.intf.Bp01Service.Result;
 import ccbs.service.intf.Bp01f0003Service;
 import ccbs.util.DateUtils;
 import ccbs.util.FileUtils;
@@ -40,7 +40,7 @@ public class Bp01f0003ServiceImpl implements Bp01f0003Service {
   @Autowired private Comm01Service comm01Service;
 
   @Override
-  @RptLogExecution(rptCode = "BP220RPT")
+  @RptLog(rptCode = "BP220RPT")
   public Result process(String jobId, String opcDate, String opcYearMonth, String isRerun) {
     String rocYearMonth =
         DateUtils.toRocYearMonth(opcYearMonth, config.getYears().getShift(), ChronoUnit.MONTHS);

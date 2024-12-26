@@ -5,9 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RptLogExecution {
-  String rptCode();
-  String paramMapping() default "";
+@Target({ElementType.METHOD, ElementType.PARAMETER})
+public @interface TxManager {
+    String[] value() default {};
 }

@@ -11,8 +11,8 @@ ccbs:
           bill-item-types:
             - name: 未收回應收帳款
               type: .*
-            - name: 
-              type: 
+            - name:
+              type:
         - name: 行動業務逾期１個月欠費
           pattern: G[1|2]
           bill-item-types:
@@ -39,22 +39,22 @@ ccbs:
           bill-item-types:
             - name: 未收回應收帳款
               type: A1
-            - name: 
-              type: 
+            - name:
+              type:
         - name: APPLE業務逾期１個月欠費
           pattern: B1
           bill-item-types:
             - name: 未收回應收帳款
               type: B1
-            - name: 
-              type: 
+            - name:
+              type:
         - name: Netflix業務逾期１個月欠費
           pattern: C1
           bill-item-types:
             - name: 未收回應收帳款
               type: C1
-            - name: 
-              type: 
+            - name:
+              type:
       rpt-cust-types:
         - name: 一般客戶
           type: 1
@@ -63,21 +63,43 @@ ccbs:
         - name: 大企業客戶
           type: 3
 
-    bp01f0007:
-      rpt-code: BPGSM010
-      filename: BPGSM010_%s%s%s.TXT
-      file-source: /workspaces/ccbs/chtreport/out/in/bpgsm010
-      file-pattern-1: BPGSM010_MBMS_\d*\.TXT
-      file-pattern-2: BPGSM010_CCBS_\d*\.TXT
-
     bp01f0013:
       rpt-code: BP2230D2
       filename: BP2230D2_T%s.csv
       years:
         shift: -1
-      titles: [1144應收帳款,1144應收帳款,1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款,
-        1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款,1812催收帳款]
+      titles:
+        [
+          1144應收帳款,
+          1144應收帳款,
+          1812催收帳款,
+          1812催收帳款,
+          1812催收帳款,
+          1812催收帳款,
+          1812催收帳款,
+          1812催收帳款,
+          1812催收帳款,
+          1812催收帳款,
+          1812催收帳款,
+          1812催收帳款,
+          1812催收帳款,
+        ]
 
     bp01f0015:
       rpt-code: BP2230D6
       filename: BP2230D6_T%s.csv
+
+    rqbp019:
+      input: ${ccbs.bpgsm010Input:/workspaces/ccbs/chtreport/out/in/bpgsm010}
+      type-configs:
+        - name: MBMS
+          pattern: BPGSM010_(.*)\.TXT
+          output: ${ccbs.txtFilePath:/workspaces/ccbs/chtreport/out/txt/}
+          filename: BPGSM010_%s%s%s.TXT
+        - name: CCBS
+          pattern: BPGSM010_(.*)\.TXT
+          output: ${ccbs.csvFilePath:/workspaces/ccbs/chtreport/out/txt/}
+          filename: BPGSM010_%s%s%s.TXT
+        - name: BPGNERP
+          output: ${ccbs.txtFilePath:/workspaces/ccbs/chtreport/out/txt/}
+          filename: BPGSM010_SCAN_BPGNERP_%s%s.TXT

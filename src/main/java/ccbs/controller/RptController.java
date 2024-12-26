@@ -1,5 +1,6 @@
 package ccbs.controller;
 
+import ccbs.conf.aop.ApiLog;
 import ccbs.dao.core.entity.RptList;
 import ccbs.model.batch.BatchArrearsInputStr;
 import ccbs.model.batch.BatchSimpleRptInStr;
@@ -16,23 +17,24 @@ import ccbs.model.online.BatchRptDownIn;
 import ccbs.model.online.BatchRptQueryIn;
 import ccbs.model.online.BatchRptQueryOut;
 import ccbs.model.online.Bp01f0003Input;
-import ccbs.model.online.Bp01f0007Input;
 import ccbs.model.online.Bp01f0013Input;
 import ccbs.model.online.GetRpoCodeOptIn;
 import ccbs.model.online.OfficeInfoQueryIn;
 import ccbs.model.online.OfficeInfoQueryOut;
 import ccbs.model.online.RptCategoryOut;
+import ccbs.model.online.Rqbp019Input;
 import ccbs.model.online.UserData;
+import ccbs.model.online.UserInfoQueryApiIn;
 import ccbs.model.online.UserInfoQueryIn;
 import ccbs.model.online.UserInfoQueryOut;
 import ccbs.model.online.ValidationIn;
 import ccbs.model.online.ValidationOut;
 import ccbs.service.intf.ArrearsService;
-import ccbs.service.intf.Bp01Service;
 import ccbs.service.intf.Bp01f0003Service;
 import ccbs.service.intf.Bp01f0013Service;
 import ccbs.service.intf.CommOfficeService;
 import ccbs.service.intf.RptLogService;
+import ccbs.service.intf.Rqbp019Service;
 import ccbs.util.DateUtils;
 import ccbs.util.ValidationUtils;
 import ccbs.util.comm01.Comm01Service;
@@ -41,7 +43,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Files;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -63,6 +64,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+
 // import need to be remove, tmp reserve
 @RestController
 @RequestMapping("/rpt/api")
@@ -73,25 +75,23 @@ public class RptController {
 
   @Autowired private Bp01f0003Service bp01f0003Service;
   @Autowired private Bp01f0013Service bp01f0013Service;
-  @Autowired private Bp01Service bp01Service;
   @Autowired private ArrearsService arrearsService;
   @Autowired RptLogService rptLogService;
   @Autowired private Comm01Service comm01Service;
   @Autowired private Comm02Service comm02Service;
   @Autowired private CommOfficeService commOfficeService;
+  @Autowired private Rqbp019Service rqbp019Service;
 
   @Value("${ccbs.pdfFilePath}") private String pdfFilePath;
   @Value("${ccbs.watermarkFilePath}") private String watermarkFilePath;
   @Value("${ccbs.csvFilePath}") private String csvFilePath;
 
   @Operation(summary = "批次設備號查欠報表", tags = {"Reports"}, description = "批次設備號查欠報表")
-  @PostMapping(value = "/batchDeviceArrears", produces = "application/json;charset=UTF-8")
-  public ResponseEntity<?> batchDeviceArrears(@RequestBody Bp01f0007Input input) {
+  @PostMapping("/batchDeviceArrears")
+  @ApiLog(uri = "/rpt/api/batchDeviceArrears", excludes = {"inputType"})
+  public ResponseEntity<?> batchDeviceArrears(@RequestBody Rqbp019Input input) {
     try {
-      bp01Service
-          .process0007(input.getJobId(), input.getOpcDate(), input.getOpcYearMonth(),
-              input.getIsRerun(), input.getInputType())
-          .getReportFile();
+      rqbp019Service.process(input);
 
       return ResponseEntity.ok().body("批次設備號查欠報作業成功!");
     } catch (Exception e) {
@@ -195,7 +195,7 @@ public class RptController {
   // "isRerun": "Y"
   // }
   @Operation(summary = "批次證號查欠", tags = {"Reports"}, description = "批次呼叫單筆證號查欠")
-  @PostMapping(value="/batchIdNoArrearsQuery", produces = "application/json;charset=UTF-8")
+  @PostMapping(value = "/batchIdNoArrearsQuery", produces = "application/json;charset=UTF-8")
   public String batchIdNoArrearsQuery(@RequestBody BatchArrearsInputStr input) {
     try {
       arrearsService.batchArrearsQuery(input);
@@ -272,12 +272,12 @@ public class RptController {
     return null;
   }
 
-  private String getRocDate(String rptDate) {
-    String yyyymmdd = rptDate.replace("-", "");
-    int rocInt = Integer.parseInt(yyyymmdd) - 19110000;
-    String cyyymmdd = String.valueOf(rocInt);
-    return cyyymmdd;
-  }
+  // private String getRocDate(String rptDate) {
+  //   String yyyymmdd = rptDate.replace("-", "");
+  //   int rocInt = Integer.parseInt(yyyymmdd) - 19110000;
+  //   String cyyymmdd = String.valueOf(rocInt);
+  //   return cyyymmdd;
+  // }
 
   private String getRocYearMonth(String rptDate) {
     String yyyymm = rptDate.replace("-", "");
@@ -304,7 +304,7 @@ public class RptController {
     // /tmp/rpt/download/
     String downFilePath = rptList.getRptFilePath();
 
-    boolean downloadOkFlg = false;
+    // boolean downloadOkFlg = false;
     if (extensionFileName.equals("pdf")) {
       // downFilePath = watermarkFilePath;
 
@@ -312,7 +312,7 @@ public class RptController {
     } else if (extensionFileName.equals("csv") || extensionFileName.equals("TXT")) {
       try {
         // input.setDownloadRptEmpId(input.getRptFileName().substring(11, 17));
-        String empIdFromWeb = input.getDownloadRptEmpId();
+        // String empIdFromWeb = input.getDownloadRptEmpId();
         // String zipFileNameWithPath = downloadCsvFileStreamResource(downFilePath,
         // fileName, input.getDownloadRptEmpId());
 
@@ -409,7 +409,7 @@ public class RptController {
       summary = "取得使用者資訊-測試", tags = {"Reports"}, description = "取得使用者資訊-測試")
   @PostMapping("/getUserInfoTest")
   public UserInfoQueryOut
-  getUserInfoTest(@RequestBody UserInfoQueryIn input) {
+  getUserInfoTest(@RequestBody UserInfoQueryApiIn input) {
     UserInfoQueryOut userInfoQueryOut = new UserInfoQueryOut();
     userInfoQueryOut.setPROC_RESULT("00");
     userInfoQueryOut.setMessage("成功");
@@ -418,7 +418,7 @@ public class RptController {
     userData.setLDAP_UID("tsai150105");
     // userData.setEMP_ID("885764");
     // empid: 892982
-    String empid = input.getEmpId().substring(input.getEmpId().length() - 6);
+    String empid = input.getEMP_ID().substring(input.getEMP_ID().length() - 6);
     userData.setEMP_ID(empid);
     userData.setEMP_NAME("蔡**");
     userData.setEMP_DEP(
@@ -442,8 +442,8 @@ public class RptController {
     userData.setUSER_STATUS(null);
     userData.setLAST_UP_DATER("林**");
 
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-    DateTimeFormatter formatterIso = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+    // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    // DateTimeFormatter formatterIso = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     String userExpiretimeStr = "0001-01-01T00:00:00";
     // LocalDateTime userExpiretime = LocalDateTime.parse(userExpiretimeStr,
@@ -592,7 +592,7 @@ public class RptController {
   }
 
   @Operation(summary = "產生會計科目檔上欠費統計表", tags = {"Reports"},
-  description = "產生會計科目檔上欠費統計表")
+      description = "產生會計科目檔上欠費統計表")
   @PostMapping(value = "/batchBP222OTRpt", produces = "application/json;charset=UTF-8")
   public ResponseEntity<String>
   batchBP222OTRpt(@RequestBody BatchSimpleRptInStr input) {
@@ -609,9 +609,9 @@ public class RptController {
       return ResponseEntity.internalServerError().body(e.getMessage());
     }
   }
-  
+
   @Operation(summary = "產生全區逾期應收帳款未收回金額比例分析表", tags = {"Reports"},
-  description = "產生全區逾期應收帳款未收回金額比例分析表")
+      description = "產生全區逾期應收帳款未收回金額比例分析表")
   @PostMapping(value = "/batchBP22TOTRpt", produces = "application/json;charset=UTF-8")
   public ResponseEntity<String>
   batchBP22TOTRpt(@RequestBody BatchSimpleRptInStr input) {
@@ -629,7 +629,7 @@ public class RptController {
   }
 
   @Operation(summary = "產生 SaaS ERP指定系列設備欠費清單", tags = {"Reports"},
-  description = "產生 SaaS ERP指定系列設備欠費清單")
+      description = "產生 SaaS ERP指定系列設備欠費清單")
   @PostMapping(value = "/batchBPGNERPRpt", produces = "application/json;charset=UTF-8")
   public ResponseEntity<String>
   batchBPGNERPRpt(@RequestBody BatchSimpleRptInStrWithType input) {
@@ -647,7 +647,7 @@ public class RptController {
   }
 
   @Operation(summary = "產生已拆機欠費前[筆數]名清單[特定業務]統計表", tags = {"Reports"},
-  description = "產生已拆機欠費前[筆數]名清單[特定業務]統計表")
+      description = "產生已拆機欠費前[筆數]名清單[特定業務]統計表")
   @PostMapping(value = "/batchBPOWE2WRpt", produces = "application/json;charset=UTF-8")
   public ResponseEntity<String>
   batchBPOWE2WRpt(@RequestBody BatchSimpleRptInStrWithOpid input) {
@@ -666,7 +666,7 @@ public class RptController {
   }
 
   @Operation(summary = "產生已出帳未銷帳彙總表[特定業務]統計表", tags = {"Reports"},
-  description = "產生已出帳未銷帳彙總表[特定業務]統計表")
+      description = "產生已出帳未銷帳彙總表[特定業務]統計表")
   @PostMapping(value = "/batchBPZ10Rpt", produces = "application/json;charset=UTF-8")
   public ResponseEntity<String>
   batchBPZ10Rpt(@RequestBody BatchSimpleRptInStrWithItemType input) {
@@ -682,9 +682,9 @@ public class RptController {
       return ResponseEntity.internalServerError().body(e.getMessage());
     }
   }
-  
+
   @Operation(summary = "產生新設備所有人證號逾期欠費清單統計表", tags = {"Reports"},
-  description = "產生新設備所有人證號逾期欠費清單統計表")
+      description = "產生新設備所有人證號逾期欠費清單統計表")
   @PostMapping(value = "/batchBPGNIDRpt", produces = "application/json;charset=UTF-8")
   public ResponseEntity<String>
   batchBPGNIDRpt(@RequestBody BatchSimpleRptInStrWithTaskMode input) {
@@ -707,30 +707,36 @@ public class RptController {
       String inputFileName = null;
       if ("D".equals(taskMode)) {
         inputFileName = "TAXN215_T" + dateSuffix + ".TXT";
-        arrearsService.batchBPGNIDDARpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
-        arrearsService.batchBPGNIDD2ARpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDDARpt(
+            inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDD2ARpt(
+            inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
 
         inputFileName = "NTAXN215_T" + dateSuffix + ".TXT";
-        arrearsService.batchBPGNIDDCRpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
-        arrearsService.batchBPGNIDD2CRpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDDCRpt(
+            inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDD2CRpt(
+            inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
       } else if ("M".equals(taskMode)) {
         inputFileName = "TAXN215_T" + datePrefix + ".TXT";
-        arrearsService.batchBPGNIDMARpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
-        arrearsService.batchBPGNIDM2ARpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDMARpt(
+            inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDM2ARpt(
+            inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
 
         inputFileName = "NTAXN215_T" + datePrefix + ".TXT";
-        arrearsService.batchBPGNIDMCRpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
-        arrearsService.batchBPGNIDM2CRpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDMCRpt(
+            inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
+        arrearsService.batchBPGNIDM2CRpt(
+            inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
       } else {
         throw new IllegalArgumentException("Invalid taskMode: " + taskMode);
       }
-      
+
       return ResponseEntity.ok("新設備所有人證號逾期欠費清單產生成功");
     } catch (Exception e) {
       log.error("新設備所有人證號逾期欠費清單產生失敗", e);
       return ResponseEntity.internalServerError().body(e.getMessage());
     }
   }
-
-  
 }

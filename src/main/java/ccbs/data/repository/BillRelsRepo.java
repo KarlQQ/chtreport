@@ -6,5 +6,5 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BillRelsRepo extends JpaRepository<BillRels, CompositeKey> {
-  List<BillRels> findBySubTela(String subTela);
+  public List<BillRels> findBySubTela(String subTela);
 }

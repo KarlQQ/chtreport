@@ -1,7 +1,7 @@
 package ccbs.data.repository;
 
-import ccbs.data.entity.AccountAggregationProjection;
 import ccbs.data.entity.RptAccount;
+import ccbs.data.entity.Rqbp017Dto;
 import ccbs.model.bp01.Bp01f0003DTO;
 import ccbs.model.bp01.Bp01f0013DTO;
 import java.util.List;
@@ -13,10 +13,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface RptAccountRepository extends JpaRepository<RptAccount, Long> {
-  Page<RptAccount> findByBillMonth(String billMonth, Pageable pageable);
+  public Page<RptAccount> findByBillMonth(String billMonth, Pageable pageable);
 
   @EntityGraph(value = "RptAccount.withItemType", type = EntityGraph.EntityGraphType.LOAD)
-  Page<RptAccount> findWithItemTypeByBillMonth(String billMonth, Pageable pageable);
+  public Page<RptAccount> findWithItemTypeByBillMonth(String billMonth, Pageable pageable);
 
   /*
     SELECT
@@ -46,7 +46,7 @@ public interface RptAccountRepository extends JpaRepository<RptAccount, Long> {
       + "WHERE ac.billMonth = :billMonth "
       + "GROUP BY ac.billOffBelong, ac.rptCustType, ac.rptItemTypeDetl.billItemType "
       + "ORDER BY TO_NUMBER(ac.billOffBelong), ac.rptCustType, ac.rptItemTypeDetl.billItemType ")
-  List<Bp01f0003DTO>
+  public List<Bp01f0003DTO>
   summaryBusinessODArrears(@Param("billMonth") String billMonth);
 
   /*
@@ -88,19 +88,7 @@ public interface RptAccountRepository extends JpaRepository<RptAccount, Long> {
   analysisOutstandingArrears(
       @Param("startBillYear") String startBillYear, @Param("endBillYear") String endBillYear);
 
-  @Query(value = 
-    "SELECT ACC_ITEM AS accItem, ACC_NAME AS accName, JSON_OBJECTAGG(BILL_MONTH, BILL_SUM) AS aggregatedData " +
-    "FROM (" +
-    "  SELECT RAC.ACC_ITEM, AC.ACC_NAME, RAC.BILL_MONTH, SUM(RAC.BILL_ITEM_AMT) AS BILL_SUM " +
-    "  FROM RPT_ACCOUNT RAC " +
-    "  LEFT JOIN COMM_ACCOUNTING AC ON RAC.ACC_ITEM = CONCAT(CONCAT(AC.ACC_TYPE, '-'), AC.ACC_CODE) " +
-    "  WHERE RAC.DEBT_MARK NOT IN ('Q','Y') AND SUBSTR(RAC.BILL_MONTH,0,3) BETWEEN :startBillYear AND :endBillYear " +
-    "  GROUP BY RAC.ACC_ITEM, AC.ACC_NAME, RAC.BILL_MONTH" +
-    ") " +
-    "GROUP BY ACC_ITEM, ACC_NAME " +
-    "ORDER BY ACC_ITEM", 
-    nativeQuery = true)
-  List<AccountAggregationProjection>
-  analysisReceivableArrears(
+  @Query(name = "AnalysisReceivableArrears", nativeQuery = true)
+  public List<Rqbp017Dto> analysisReceivableArrears(
       @Param("startBillYear") String startBillYear, @Param("endBillYear") String endBillYear);
 }

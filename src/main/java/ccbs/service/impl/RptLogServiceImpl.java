@@ -105,7 +105,7 @@ public class RptLogServiceImpl implements RptLogService {
       rptLogsIn.setCreateStatus("CP");
 
       rptLogsIn.setCreateCount(new BigDecimal(input.getCreateCount()));
-      rptLogsIn.setErrorCount(new BigDecimal(input.getErrorount()));
+      rptLogsIn.setErrorCount(new BigDecimal(input.getErrorCount()));
 
       RptList rptListOut = getRptList(input);
       rptLogsIn.setOpType(rptListOut.getOpType());
@@ -130,7 +130,7 @@ public class RptLogServiceImpl implements RptLogService {
       }
 
       // update RPT_LOGS_DETLS.RPT_LOGS_STATUS to "E" if IsRerun
-      if (input.getIsRerun().equals("Y")) {
+      if ("Y".equals(input.getIsRerun())) {
         for (int i = 0; i < input.getDDataSet().size(); i++) {
           RptLogsDetlsDynamicSqlSupport.RptLogsDetls rptLogsDetls =
               RptLogsDetlsDynamicSqlSupport.rptLogsDetls;

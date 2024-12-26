@@ -23,7 +23,7 @@ public class RptLogAfterExecuteInputStr {
 
   @Schema(description = "產制檔案筆數", example = "") private Integer createCount;
 
-  @Schema(description = "錯誤筆數", example = "") private Integer errorount;
+  @Schema(description = "錯誤筆數", example = "") private Integer errorCount;
 
   @Schema(description = "作業批號", example = "") private String opBatchno;
 

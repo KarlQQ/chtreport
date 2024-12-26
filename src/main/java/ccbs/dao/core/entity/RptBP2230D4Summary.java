@@ -2,7 +2,6 @@ package ccbs.dao.core.entity;
 
 import java.math.BigDecimal;
 
-import jakarta.annotation.Generated;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
