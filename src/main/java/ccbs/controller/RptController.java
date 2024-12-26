@@ -706,19 +706,19 @@ public class RptController {
 
       String inputFileName = null;
       if ("D".equals(taskMode)) {
-        inputFileName = "TAXN215_" + dateSuffix + ".TXT";
+        inputFileName = "TAXN215_T" + dateSuffix + ".TXT";
         arrearsService.batchBPGNIDDARpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
         arrearsService.batchBPGNIDD2ARpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
 
-        inputFileName = "NTAXN215_" + dateSuffix + ".TXT";
+        inputFileName = "NTAXN215_T" + dateSuffix + ".TXT";
         arrearsService.batchBPGNIDDCRpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
         arrearsService.batchBPGNIDD2CRpt(inputFileName, opcYYYMM, dateSuffix, opcDate, isRerun, jobId);
       } else if ("M".equals(taskMode)) {
-        inputFileName = "TAXN215_" + datePrefix + ".TXT";
+        inputFileName = "TAXN215_T" + datePrefix + ".TXT";
         arrearsService.batchBPGNIDMARpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
         arrearsService.batchBPGNIDM2ARpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
 
-        inputFileName = "NTAXN215_" + datePrefix + ".TXT";
+        inputFileName = "NTAXN215_T" + datePrefix + ".TXT";
         arrearsService.batchBPGNIDMCRpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
         arrearsService.batchBPGNIDM2CRpt(inputFileName, opcYYYMM, datePrefix, opcDate, isRerun, jobId);
       } else {
