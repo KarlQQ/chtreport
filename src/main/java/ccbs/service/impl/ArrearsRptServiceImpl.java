@@ -3633,7 +3633,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       bpgnidFileLineInput.setLbZipCode(line.substring(84, 88).trim());
       bpgnidFileLineInput.setLbAdr(line.substring(89, 129).trim());
       bpgnidFileLineInput.setLbEmpId(line.substring(130, 135).trim());
-      //bpgnidFileLineInput.setLbAdslExg(line.substring(136, 136).trim());
+      bpgnidFileLineInput.setLbAdslExg(line.substring(136, 136).trim());
 
       bpgnidFileLineInputs.add(bpgnidFileLineInput);
     }
@@ -3689,7 +3689,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
           txtGenerator.writeValue(36, 50, sumAmt);
           txtGenerator.writeValue(51, 60, billIdno);
           txtGenerator.writeValue(61, 140, lineInput.getLbBillName());
-          //txtGenerator.writeValue(141, 141, lineInput.getLbAdslExg());
+          txtGenerator.writeValue(141, 141, lineInput.getLbAdslExg());
           txtGenerator.nextRow();
 
         } else {
