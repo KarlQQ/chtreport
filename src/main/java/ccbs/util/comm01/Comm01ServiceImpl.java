@@ -307,7 +307,7 @@ public class Comm01ServiceImpl implements Comm01Service {
       bankAccountCharArray[inputBankAccounLength - 4] = '*';
       bankAccountCharArray[inputBankAccounLength - 6] = '*';
       bankAccountCharArray[inputBankAccounLength - 8] = '*';
-      String outputMaskBankAccount = bankAccountCharArray.toString();
+      String outputMaskBankAccount = new String(bankAccountCharArray);
       outputStr.setMaskBankAccount(outputMaskBankAccount);
     }
 
@@ -320,7 +320,7 @@ public class Comm01ServiceImpl implements Comm01Service {
       telnoCharArray[inputTelnoLength - 2] = whiteCircle;
       telnoCharArray[inputTelnoLength - 4] = whiteCircle;
       telnoCharArray[inputTelnoLength - 6] = whiteCircle;
-      String outputMaskTelno = telnoCharArray.toString();
+      String outputMaskTelno = new String(telnoCharArray);
       outputStr.setMaskTelno(outputMaskTelno);
     }
 
