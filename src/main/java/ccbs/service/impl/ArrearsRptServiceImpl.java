@@ -345,7 +345,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
 
     try (DirectoryStream<Path> stream = Files.newDirectoryStream(directoryPath)) {
       for (Path entry : stream) {
-        if (Files.isRegularFile(entry)) {
+        if (Files.isRegularFile(entry) && entry.getFileName().toString().startsWith("bpgusub")) {
           readSingleFileAndGenRpts(entry, rptCode, input);
         }
       }
@@ -375,22 +375,24 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       log.debug("File: " + entry.getFileName());
       log.debug("Content:\n" + content);
 
-      // 1.
-      // 使用〔報表產製日誌(執行前)〕新增寫報表產製記錄並取得【報表記錄序碼RPT_LOGS_ID】
-      log.debug("write log before execute start, "
-          + " time: " + getCurrentDateTime());
-      RptLogBeforeExecuteInputStr rptLogBeforeExecuteInputStr = new RptLogBeforeExecuteInputStr();
-      rptLogBeforeExecuteInputStr.setRptCode(rptCode);
-      RptLogBeforeExecuteOutputStr rptLogBeforeExecuteOutputStr =
-          comm03Service.COMM03_0001(rptLogBeforeExecuteInputStr);
-      log.debug("write log before execute end, "
-          + " time: " + getCurrentDateTime());
+      if (inputType.equals("1")) {
+        // 1.
+        // 使用〔報表產製日誌(執行前)〕新增寫報表產製記錄並取得【報表記錄序碼RPT_LOGS_ID】
+        log.debug("write log before execute start, "
+            + " time: " + getCurrentDateTime());
+        RptLogBeforeExecuteInputStr rptLogBeforeExecuteInputStr = new RptLogBeforeExecuteInputStr();
+        rptLogBeforeExecuteInputStr.setRptCode(rptCode);
+        RptLogBeforeExecuteOutputStr rptLogBeforeExecuteOutputStr =
+            comm03Service.COMM03_0001(rptLogBeforeExecuteInputStr);
+        log.debug("write log before execute end, "
+            + " time: " + getCurrentDateTime());
 
-      log.debug("rptLogBeforeExecuteOutputStr: " + rptLogBeforeExecuteOutputStr);
-      if (rptLogBeforeExecuteOutputStr.getProcResult() == "00") {
-        rptLogsId = rptLogBeforeExecuteOutputStr.getRptLogsId();
+        log.debug("rptLogBeforeExecuteOutputStr: " + rptLogBeforeExecuteOutputStr);
+        if (rptLogBeforeExecuteOutputStr.getProcResult() == "00") {
+          rptLogsId = rptLogBeforeExecuteOutputStr.getRptLogsId();
+        }
+        log.debug("rptLogsId: " + rptLogsId);
       }
-      log.debug("rptLogsId: " + rptLogsId);
       // 3.
       // 使用〔單筆證號查欠〕方法,傳入來源檔【證號】欄位及｛查子號識別｝=「Y」,取得【欠費資料】
       List<ArrearsFileLineInput> arrearsFileInputs = convertArrearsFileInputInput(content);
@@ -427,16 +429,17 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       log.debug("generateCsvRows end, "
           + " time: " + getCurrentDateTime());
 
-      // default will gen non mask report
-      log.debug("generateRpts start, "
-          + " time: " + getCurrentDateTime());
-      generateRpts(bpgusub_reportRowsFormOut, fileNameWithoutExtension, false, input,
-          arrearsFileInputs, singleArrearsOutputStrs, rptLogsId, rptCode, fileName,
-          naturalIncludeFlg, bpgusub_reportRowsFormCsvOut);
-      log.debug("generateRpts end, "
-          + " time: " + getCurrentDateTime());
+      if (inputType.equals("1")) {
+        // default will gen non mask report
+        log.debug("generateRpts start, "
+            + " time: " + getCurrentDateTime());
+        generateRpts(bpgusub_reportRowsFormOut, fileNameWithoutExtension, false, input,
+            arrearsFileInputs, singleArrearsOutputStrs, rptLogsId, rptCode, fileName,
+            naturalIncludeFlg, bpgusub_reportRowsFormCsvOut);
+        log.debug("generateRpts end, "
+            + " time: " + getCurrentDateTime());
 
-      if (inputType.equals("2")) {
+      } else if (inputType.equals("2")) {
         generateTxt(input, arrearsInputStrs, genMaskReportFlg);
       }
 
@@ -458,16 +461,16 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         log.debug("generateCsvRows masked end, "
             + " time: " + getCurrentDateTime());
 
-        // mask report generate
-        log.debug("generateRpts masked start, "
-            + " time: " + getCurrentDateTime());
-        generateRpts(bpgusub_reportRowsFormOut_mask, fileNameWithoutExtension, genMaskReportFlg,
-            input, arrearsFileInputs, singleArrearsOutputStrs, rptLogsId, rptCode, fileName,
-            naturalIncludeFlg, bpgusub_reportRowsFormCsvOut_mask);
-        log.debug("generateRpts masked end, "
-            + " time: " + getCurrentDateTime());
-
-        if (inputType.equals("2")) {
+        if (inputType.equals("1")) {
+          // mask report generate
+          log.debug("generateRpts masked start, "
+              + " time: " + getCurrentDateTime());
+          generateRpts(bpgusub_reportRowsFormOut_mask, fileNameWithoutExtension, genMaskReportFlg,
+              input, arrearsFileInputs, singleArrearsOutputStrs, rptLogsId, rptCode, fileName,
+              naturalIncludeFlg, bpgusub_reportRowsFormCsvOut_mask);
+          log.debug("generateRpts masked end, "
+              + " time: " + getCurrentDateTime());
+        } else if (inputType.equals("2")) {
           generateTxt(input, arrearsInputStrs, genMaskReportFlg);
         }
       }
@@ -3115,6 +3118,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
     String isRerun = input.getIsRerun();
     String jobId = input.getJobId();
     String itemType = input.getItemType();
+    String inputOff = input.getInputOff();
     String opcDate = input.getOpcDate();
     String rocDate = DateUtils.convertToRocDate(opcDate);
     String opcYYYMM = input.getOpcYearMonth();
@@ -3176,15 +3180,6 @@ public class ArrearsRptServiceImpl implements ArrearsService {
         ((List<Map<String, Object>>) dataMap.get("items")).add(item);
 
         groupedData.get(billOffBelong).add(dataMap);
-      }
-    }
-
-    // Iterate over groupedData
-    for (String billOffBelong : groupedData.keySet()) {
-      System.out.println("Bill Off Belong: " + billOffBelong);
-      for (Map<String, Object> dataMap : groupedData.get(billOffBelong)) {
-        System.out.println("Data: " + dataMap);
-        // You can further process each dataMap here
       }
     }
 
@@ -3320,6 +3315,7 @@ public class ArrearsRptServiceImpl implements ArrearsService {
       dDataList.add(dData.builder()
                         .rptFileName(txtFileName)
                         .rptTimes("3")
+                        .billOff(inputOff)
                         .billMonth(rocYYYMM)
                         .rptDate(opcDate)
                         .rptFileCount(rowCount)

@@ -749,7 +749,7 @@ public interface RptAccountSummaryMapper {
       sql.append("    rbm.BILL_TEL AS billTel, \n");
       sql.append("    NVL(abd.TOTAL_AMT, 0) AS totalAmt, \n");
       sql.append("    CASE \n");
-      sql.append("        WHEN rbm.BILL_TEL IS NULL THEN 'N' \n");
+      sql.append("        WHEN NVL(abd.TOTAL_AMT, 0) = 0 THEN 'N' \n");
       sql.append("        ELSE 'Y' \n");
       sql.append("    END AS dueId \n");
       sql.append("FROM \n");

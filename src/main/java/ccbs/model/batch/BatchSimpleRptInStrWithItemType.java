@@ -11,4 +11,7 @@ import lombok.ToString;
 public class BatchSimpleRptInStrWithItemType extends BatchSimpleRptInStr {
     @Schema(description = "費用代號類別", example = "G3")
     private String itemType;
+
+    @Schema(description = "機構代號", example = "2")
+    private String inputOff;
 }
